@@ -69,7 +69,6 @@ public class PlayerInputHandler : MonoBehaviour
         
 
         if (!Mouse.current.rightButton.wasPressedThisFrame) return;
-
         Vector2 screenPos = Mouse.current.position.ReadValue();
         Ray ray = cam.ScreenPointToRay(screenPos);
 
