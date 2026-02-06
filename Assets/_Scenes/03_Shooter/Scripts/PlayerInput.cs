@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Starter.Shooter
-{
+
 	/// <summary>
 	/// Structure holding player input.
 	/// </summary>
@@ -31,6 +30,7 @@ namespace Starter.Shooter
 
 		private void Update()
 		{
+			
 			// Accumulate input only if the cursor is locked.
 			if (Cursor.lockState != CursorLockMode.Locked)
 				return;
@@ -45,6 +45,7 @@ namespace Starter.Shooter
 
 			_input.Fire |= Input.GetButtonDown("Fire1");
 			_input.Jump |= Input.GetButtonDown("Jump");
+			
 		}
 	}
-}
+

@@ -836,6 +836,8 @@ GameObject:
   - component: {fileID: 1456884811667506144}
   - component: {fileID: 5662218296696241727}
   - component: {fileID: 3242367532639762411}
+  - component: {fileID: 5659444026973575049}
+  - component: {fileID: 5542224532118417901}
   m_Layer: 6
   m_Name: Knight
   m_TagString: Untagged
@@ -968,7 +970,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 4414580641907279035}
-  weaponPrefab: {fileID: 7066895852089497422, guid: 13dc7a82b6046034da832d539a2cce8b, type: 3}
+  weaponPrefab: {fileID: 7066895852089497422, guid: 13dc7a82b6046034da832d539a2cce8b,
+    type: 3}
   hand: 18
   localPosition: {x: 0, y: 0, z: 0}
   localEulerAngles: {x: 0, y: 0, z: 0}
@@ -992,6 +995,45 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   mover: {fileID: 4958518384754801489}
+  skillRunner: {fileID: 0}
+--- !u!114 &5659444026973575049
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1927186500216150043}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c869ad681a21048459cba2d0dd5f5e7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animator: {fileID: 4414580641907279035}
+  agent: {fileID: 3522730750389291525}
+  skills:
+  - {fileID: 11400000, guid: 9c27935cb8bf86342b52c1eab123ab6c, type: 2}
+  - {fileID: 11400000, guid: 1002fb29bd3dda74ab45475616ff21d8, type: 2}
+  - {fileID: 11400000, guid: 9c7f95c27f6d8ba4cb903d6db07cfa66, type: 2}
+  - {fileID: 11400000, guid: a860aaafd9a999b4a88b0e3135d179bc, type: 2}
+--- !u!114 &5542224532118417901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1927186500216150043}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c869ad681a21048459cba2d0dd5f5e7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animator: {fileID: 4414580641907279035}
+  agent: {fileID: 3522730750389291525}
+  skills:
+  - {fileID: 11400000, guid: 9c27935cb8bf86342b52c1eab123ab6c, type: 2}
+  - {fileID: 11400000, guid: 1002fb29bd3dda74ab45475616ff21d8, type: 2}
+  - {fileID: 11400000, guid: 9c7f95c27f6d8ba4cb903d6db07cfa66, type: 2}
+  - {fileID: 11400000, guid: a860aaafd9a999b4a88b0e3135d179bc, type: 2}
 --- !u!1 &1983598681274538345
 GameObject:
   m_ObjectHideFlags: 0

@@ -3,8 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Starter.Shooter
-{
+
 	/// <summary>
 	/// Main UI script for Shooter sample.
 	/// </summary>
@@ -94,4 +93,4 @@ namespace Starter.Shooter
 			}
 		}
 	}
-}
+

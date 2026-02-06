@@ -3,13 +3,13 @@ using Fusion;
 using Fusion.Addons.SimpleKCC;
 using UnityEngine.Rendering;
 
-namespace Starter.Shooter
-{
+
 	/// <summary>
 	/// Main player scrip - controls player movement and animations.
 	/// </summary>
 	public sealed class Player : NetworkBehaviour
 	{
+		
 		[Header("References")]
 		public Health Health;
 		public SimpleKCC KCC;
@@ -52,13 +52,18 @@ namespace Starter.Shooter
 
 		[Header("VFX")]
 		public ParticleSystem DustParticles;
+		
+		public PlayerInputHandler InputHandler;
+		public GameObject VisualRoot;
+		[Networked]
+		private Vector3 _playerLocation { get; set; }
 
 		[Networked, HideInInspector, Capacity(24), OnChangedRender(nameof(OnNicknameChanged))]
 		public string Nickname { get; set; }
 		[Networked, HideInInspector]
 		public int ChickenKills { get; set; }
 
-		[Networked, OnChangedRender(nameof(OnJumpingChanged))]
+		//[Networked, OnChangedRender(nameof(OnJumpingChanged))]
 		private NetworkBool _isJumping { get; set; }
 		[Networked]
 		private Vector3 _hitPosition { get; set; }
@@ -66,7 +71,7 @@ namespace Starter.Shooter
 		private Vector3 _hitNormal { get; set; }
 		[Networked]
 		private int _fireCount { get; set; }
-
+		
 		// Animation IDs
 		private int _animIDSpeedX;
 		private int _animIDSpeedZ;
@@ -79,7 +84,7 @@ namespace Starter.Shooter
 		private int _visibleFireCount;
 
 		private GameManager _gameManager;
-
+		
 		public override void Spawned()
 		{
 			if (HasStateAuthority)
@@ -89,35 +94,30 @@ namespace Starter.Shooter
 				// Set player nickname that is saved in UIGameMenu
 				Nickname = PlayerPrefs.GetString("PlayerName");
 			}
-
+			
+			InputHandler.enabled = HasInputAuthority;
 			// In case the nickname is already changed,
 			// we need to trigger the change manually
 			OnNicknameChanged();
 
 			// Reset visible fire count
 			_visibleFireCount = _fireCount;
+		}
 
+		public override void FixedUpdateNetwork()
+		{
+			VisualRoot.transform.position = InputHandler.transform.position;
 			if (HasStateAuthority)
 			{
-				// For input authority deactivate head renderers so they are not obstructing the view
-				for (int i = 0; i < HeadRenderers.Length; i++)
-				{
-					HeadRenderers[i].shadowCastingMode = ShadowCastingMode.ShadowsOnly;
-				}
-
-				// Some objects (e.g. weapon) are renderer with secondary Overlay camera.
-				// This prevents weapon clipping into the wall when close to the wall.
-				int overlayLayer = LayerMask.NameToLayer("FirstPersonOverlay");
-				for (int i = 0; i < FirstPersonOverlayObjects.Length; i++)
-				{
-					FirstPersonOverlayObjects[i].layer = overlayLayer;
-				}
-
-				// Look rotation interpolation is skipped for local player.
-				// Look rotation is set manually in Render.
-				KCC.Settings.ForcePredictedLookRotation = true;
+				
+			}
+			else
+			{
+				
 			}
 		}
+
+		/*
 
 		public override void FixedUpdateNetwork()
 		{
@@ -292,7 +292,7 @@ namespace Starter.Shooter
 		private void OnEnemyKilled(Health enemyHealth)
 		{
 			// Killing chicken grants 1 point, killing other player has -10 points penalty.
-			ChickenKills += enemyHealth.GetComponent<Chicken>() != null ? 1 : -10;
+
 		}
 
 		private void ShowFireEffects()
@@ -342,6 +342,7 @@ namespace Starter.Shooter
 				ScalingRoot.localScale = _isJumping ? new Vector3(0.5f, 1.5f, 0.5f) : new Vector3(1.25f, 0.75f, 1.25f);
 			}
 		}
+		*/
 
 		private void OnNicknameChanged()
 		{
@@ -350,5 +351,6 @@ namespace Starter.Shooter
 
 			Nameplate.SetNickname(Nickname);
 		}
+		
 	}
-}
+

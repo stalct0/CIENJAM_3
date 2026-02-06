@@ -1,8 +1,7 @@
 ﻿using TMPro;
 using UnityEngine;
 
-namespace Starter
-{
+
 	/// <summary>
 	/// Component that handle showing nicknames above player
 	/// </summary>
@@ -29,4 +28,4 @@ namespace Starter
 			transform.rotation = _cameraTransform.rotation;
 		}
 	}
-}
+

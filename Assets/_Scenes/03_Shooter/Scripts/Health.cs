@@ -2,8 +2,7 @@
 using Fusion;
 using UnityEngine;
 
-namespace Starter.Shooter
-{
+
 	/// <summary>
 	/// A common component that represents entity health.
 	/// It is used for both players and chickens.
@@ -150,4 +149,4 @@ namespace Starter.Shooter
 			return interpolator.Int(nameof(_networkHealth)) > 0;
 		}
 	}
-}
+

@@ -1,8 +1,7 @@
 ﻿using UnityEngine;
 using Fusion;
 
-namespace Starter.Shooter
-{
+
 	/// <summary>
 	/// Handles player connections (spawning of Player instances).
 	/// </summary>
@@ -59,4 +58,4 @@ namespace Starter.Shooter
 			LocalPlayer = null;
 		}
 	}
-}
+

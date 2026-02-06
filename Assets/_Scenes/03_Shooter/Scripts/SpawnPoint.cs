@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Starter.Shooter
-{
+
 	/// <summary>
 	/// Represents a spawning point in the environment.
 	/// </summary>
@@ -14,4 +13,4 @@ namespace Starter.Shooter
 			Gizmos.DrawWireSphere(transform.position, Radius);
 		}
 	}
-}
+
