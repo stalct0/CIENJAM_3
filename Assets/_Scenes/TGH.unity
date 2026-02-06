@@ -389,7 +389,7 @@ GameObject:
   - component: {fileID: 563169280}
   - component: {fileID: 563169279}
   - component: {fileID: 563169278}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: Ground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -554,10 +554,21 @@ PrefabInstance:
       propertyPath: cam
       value: 
       objectReference: {fileID: 330585545}
-    - target: {fileID: 4414580641907279035, guid: 0186165c7862b8442947ca7c23d3f38a, type: 3}
+    - target: {fileID: 3242367532639762411, guid: 0186165c7862b8442947ca7c23d3f38a,
+        type: 3}
+      propertyPath: groundMask.m_Bits
+      value: 256
+      objectReference: {fileID: 0}
+    - target: {fileID: 4414580641907279035, guid: 0186165c7862b8442947ca7c23d3f38a,
+        type: 3}
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4414580641907279035, guid: 0186165c7862b8442947ca7c23d3f38a,
+        type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 8f6618fecc7ac504da217726f0808ef8, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -649,7 +660,7 @@ MonoBehaviour:
   m_Center: {x: 0, y: 2, z: 0}
   m_LayerMask:
     serializedVersion: 2
-    m_Bits: 183
+    m_Bits: 439
   m_UseGeometry: 0
   m_DefaultArea: 0
   m_GenerateLinks: 0
@@ -660,7 +671,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: 5eec7c5c285cf0340b5b4c5badc2fcbc, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: 66e47804cf324484f9a15dd8aa736096, type: 2}
   m_BuildHeightMesh: 0
 --- !u!4 &1490660298
 Transform:
