@@ -68,7 +68,6 @@ public class SkillRunner : MonoBehaviour
         return true;
     }
 
-    // === 애니 이벤트에서 호출 ===
     public void AnimEvent_Hit()
     {
         if (current?.logic == null) return;
