@@ -39,10 +39,10 @@ public class DashLogic : SkillLogic
     {
         t += dt;
         float a = Mathf.Clamp01(t / Mathf.Max(0.0001f, duration));
+
         var p = Vector3.Lerp(startPos, endPos, a);
-        p.y = runner.transform.position.y;
-        runner.transform.position = p;
-        runner.transform.position = Vector3.Lerp(startPos, endPos, a);
+        p.y = runner.transform.position.y;   // 높이 고정(원하는 동작이면 유지)
+        runner.transform.position = p;       // 한 번만 적용
     }
 
     public override void OnAnimEnd(SkillRunner runner, SkillDefinition def)

@@ -19,4 +19,9 @@ public class AnimEventsForwarder : MonoBehaviour
     {
         runner?.AnimEvent_End();
     }
+    
+    public void StartCast()
+    {
+        runner?.AnimEvent_Start();
+    }
 }

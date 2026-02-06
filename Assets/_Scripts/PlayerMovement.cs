@@ -14,4 +14,12 @@ public class PlayerMovement : MonoBehaviour
     {
         agent.SetDestination(worldPos);
     }
+    
+    public void CancelMove()
+    {
+        if (!agent) return;
+        agent.isStopped = true;
+        agent.ResetPath();
+        agent.isStopped = false;
+    }
 }

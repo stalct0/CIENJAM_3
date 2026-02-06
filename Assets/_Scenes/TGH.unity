@@ -1291,15 +1291,15 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1927186500695452733}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -4.293478, y: 0.43, z: -1.5254803}
+  m_LocalRotation: {x: 0, y: -1, z: 0, w: 0}
+  m_LocalPosition: {x: -1.49, y: 0.22, z: -4.84}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4395893378316363736}
   - {fileID: 2476572401107157752}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -180, z: 0}
 --- !u!4 &2155509548392902151
 Transform:
   m_ObjectHideFlags: 0
@@ -1739,6 +1739,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a884072f96379d74f8dddd7cd2fea4c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  inputState:
+    castLMB: 0
+    castQ: 0
+    castW: 0
+    castE: 0
+    castR: 0
+    moveClick: 0
+    moveWorldPoint: {x: 0, y: 0, z: 0}
+    hasAimPoint: 0
+    aimWorldPoint: {x: 0, y: 0, z: 0}
   cam: {fileID: 330585545}
   groundMask:
     serializedVersion: 2
@@ -1835,9 +1845,9 @@ NavMeshAgent:
   m_AgentTypeID: 0
   m_Radius: 0.5
   m_Speed: 3.5
-  m_Acceleration: 25
+  m_Acceleration: 100
   avoidancePriority: 50
-  m_AngularSpeed: 720
+  m_AngularSpeed: 1500
   m_StoppingDistance: 0
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
@@ -2552,6 +2562,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 4414580642652467357}
+  skillRunner: {fileID: 0}
   weaponPrefab: {fileID: 7066895852089497422, guid: 13dc7a82b6046034da832d539a2cce8b,
     type: 3}
   hand: 18
@@ -2560,6 +2571,8 @@ MonoBehaviour:
   localScale: {x: 1, y: 1, z: 1}
   createSocketObject: 1
   socketName: WeaponSocket
+  swordTipName: VFX_SwordTip
+  swordBaseName: VFX_SwordBase
 --- !u!4 &5682919077340733348
 Transform:
   m_ObjectHideFlags: 0
@@ -3304,6 +3317,12 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1002fb29bd3dda74ab45475616ff21d8, type: 2}
   - {fileID: 11400000, guid: 9c7f95c27f6d8ba4cb903d6db07cfa66, type: 2}
   - {fileID: 11400000, guid: a860aaafd9a999b4a88b0e3135d179bc, type: 2}
+  cam: {fileID: 0}
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 256
+  swordTip: {fileID: 0}
+  swordBase: {fileID: 0}
 --- !u!1 &8142670827832723784
 GameObject:
   m_ObjectHideFlags: 0

@@ -17,3 +17,7 @@ MonoBehaviour:
   animatorTrigger: Skill_R
   lockMovement: 1
   logic: {fileID: 11400000, guid: 7cf62c4530bdd2b4b90e68df3338b656, type: 2}
+  requireFacing: 1
+  turnSpeedDegPerSec: 1500
+  facingToleranceDeg: 6
+  lockMovementWhileTurning: 1

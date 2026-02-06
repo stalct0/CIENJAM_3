@@ -1,26 +1,34 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-
-
 public class PlayerInputHandler : MonoBehaviour
 {
-    public struct _inputState
+    [System.Serializable]
+    public struct PlayerInputState
     {
-        public bool Q;
-        public bool W;
-        public bool E;
-        public bool R;
-        public bool LMB;
-        public bool MovePosition;
+        public bool castLMB;
+        public bool castQ;
+        public bool castW;
+        public bool castE;
+        public bool castR;
+
+        public bool moveClick;          
+        public Vector3 moveWorldPoint;  
+
+        public bool hasAimPoint;
+        public Vector3 aimWorldPoint;
     }
-    
-    public _inputState inputState;
+
+    [Header("State (read-only at runtime)")]
+    public PlayerInputState inputState;
+
+    [Header("Refs")]
     public Camera cam;
     public LayerMask groundMask;
+
     public PlayerMovement mover;
     public SkillRunner skillRunner;
-    
+
     void Awake()
     {
         if (cam == null) cam = Camera.main;
@@ -30,56 +38,85 @@ public class PlayerInputHandler : MonoBehaviour
 
     void Update()
     {
-        if (Mouse.current == null) return;
+        if (Mouse.current == null || Keyboard.current == null) return;
 
-        if (Input.GetMouseButtonDown(0))
-        {
-            inputState.LMB = true;
-            skillRunner.TryCast(SkillSlot.LMB);
-            inputState.LMB = false;
-        }
+        // 1) aimPoint는 "매 프레임" 갱신 (스킬이 필요로 함)
+        UpdateAimPoint();
 
-        if (Input.GetKeyDown(KeyCode.Q))
-        {
-            inputState.Q = true;
-            skillRunner.TryCast(SkillSlot.Q);
-            inputState.Q = false;
-        }
+        // 2) 입력을 state에만 기록
+        ReadInputsIntoState();
 
-        if (Input.GetKeyDown(KeyCode.W))
-        {
-            inputState.W = true;
-            skillRunner.TryCast(SkillSlot.W);
-            inputState.W = false;
-        }
+        // 3) state를 보고 다른 스크립트들을 구동
+        DispatchStateToControllers();
 
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            inputState.E = true;
-            skillRunner.TryCast(SkillSlot.E);
-            inputState.E = false;
-        }
+        // 4) 1프레임 트리거들은 리셋 (aimPoint는 유지)
+        ClearOneFrameTriggers();
+    }
 
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            inputState.R = true;
-            skillRunner.TryCast(SkillSlot.R);
-            inputState.R = false;
-        }
-        
-
-        if (!Mouse.current.rightButton.wasPressedThisFrame) return;
+    void UpdateAimPoint()
+    {
         Vector2 screenPos = Mouse.current.position.ReadValue();
         Ray ray = cam.ScreenPointToRay(screenPos);
 
-        if (Physics.Raycast(ray, out RaycastHit hit, 500f, groundMask, QueryTriggerInteraction.Ignore))
+        if (Physics.Raycast(ray, out RaycastHit hit, 5000f, groundMask, QueryTriggerInteraction.Ignore))
         {
-            mover.MoveTo(hit.point);
+            inputState.hasAimPoint = true;
+            inputState.aimWorldPoint = hit.point;
+        }
+        else
+        {
+            inputState.hasAimPoint = false;
+        }
+    }
+
+    void ReadInputsIntoState()
+    {
+        if (Mouse.current.leftButton.wasPressedThisFrame)
+            inputState.castLMB = true;
+
+        if (Keyboard.current.qKey.wasPressedThisFrame) inputState.castQ = true;
+        if (Keyboard.current.wKey.wasPressedThisFrame) inputState.castW = true;
+        if (Keyboard.current.eKey.wasPressedThisFrame) inputState.castE = true;
+        if (Keyboard.current.rKey.wasPressedThisFrame) inputState.castR = true;
+
+        if (Mouse.current.rightButton.wasPressedThisFrame)
+        {
+            inputState.moveClick = true;
+
+            if (inputState.hasAimPoint)
+                inputState.moveWorldPoint = inputState.aimWorldPoint;
+        }
+    }
+
+    void DispatchStateToControllers()
+    {
+        if (skillRunner != null)
+            skillRunner.SetAimPoint(inputState.hasAimPoint, inputState.aimWorldPoint);
+
+        if (mover != null && inputState.moveClick && inputState.hasAimPoint)
+        {
+            if (skillRunner == null || !skillRunner.IsCasting)
+                mover.MoveTo(inputState.moveWorldPoint);
         }
 
-        if (Input.GetKeyDown(KeyCode.Q))
+        // 스킬 우선순위
+        if (skillRunner != null)
         {
-            skillRunner.TryCast(SkillSlot.Q);
+            if (inputState.castLMB) skillRunner.TryCast(SkillSlot.LMB);
+            else if (inputState.castQ) skillRunner.TryCast(SkillSlot.Q);
+            else if (inputState.castW) skillRunner.TryCast(SkillSlot.W);
+            else if (inputState.castE) skillRunner.TryCast(SkillSlot.E);
+            else if (inputState.castR) skillRunner.TryCast(SkillSlot.R);
         }
+    }
+
+    void ClearOneFrameTriggers()
+    {
+        inputState.castLMB = false;
+        inputState.castQ = false;
+        inputState.castW = false;
+        inputState.castE = false;
+        inputState.castR = false;
+        inputState.moveClick = false;
     }
 }

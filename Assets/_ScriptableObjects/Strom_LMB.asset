@@ -17,3 +17,17 @@ MonoBehaviour:
   animatorTrigger: Attack_LMB
   lockMovement: 1
   logic: {fileID: 11400000, guid: 7cf62c4530bdd2b4b90e68df3338b656, type: 2}
+  requireFacing: 1
+  turnSpeedDegPerSec: 720
+  facingToleranceDeg: 6
+  lockMovementWhileTurning: 1
+  vfx:
+  - timing: 0
+    prefab: {fileID: 6389406066330802589, guid: 5ef8d476ac4025a4e85cc5e7c5004889,
+      type: 3}
+    attachTo: 2
+    customSocketName: 
+    localPos: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+    lifeTime: 1
+    follow: 0

@@ -11,9 +11,6 @@ public class MeleeAttackLogic : SkillLogic
 
     public override void OnStart(SkillRunner runner, SkillDefinition def)
     {
-        // 공격 시작 시 마우스 방향으로 즉시 회전
-        Vector3 mouse = runner.GetMouseGroundPoint();
-        runner.FaceTo(mouse, 99999f);
     }
 
     public override void OnAnimHit(SkillRunner runner, SkillDefinition def)
