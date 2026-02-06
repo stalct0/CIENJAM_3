@@ -32,19 +32,7 @@ public class WeaponEquipper : MonoBehaviour
     {
         if (!animator) animator = GetComponentInChildren<Animator>();
 
-        // Animator가 Humanoid여야 GetBoneTransform이 안정적으로 됩니다.
-        if (!animator || !animator.isHuman)
-        {
-            Debug.LogError("[WeaponEquipper] Animator가 없거나 Humanoid가 아닙니다.");
-            return;
-        }
-
         Transform handT = animator.GetBoneTransform(hand);
-        if (!handT)
-        {
-            Debug.LogError("[WeaponEquipper] 손 본을 찾지 못했습니다. Rig가 Humanoid인지 확인하세요.");
-            return;
-        }
 
         if (createSocketObject)
         {
