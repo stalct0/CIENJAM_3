@@ -3,8 +3,8 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Game/Skill Logic/Dash")]
 public class DashLogic : SkillLogic
 {
-    public float distance = 4f;
-    public float duration = 0.12f;
+    public float distance = 3f;
+    public float duration = 0.5f;
     public bool backward = true; // "뒤로"면 true
 
     // Runner에 상태를 저장해야 해서: runtime 상태를 runner에 임시로 저장하는 방식 사용
