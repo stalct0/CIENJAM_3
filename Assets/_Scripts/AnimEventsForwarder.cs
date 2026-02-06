@@ -1,0 +1,22 @@
+using UnityEngine;
+
+public class AnimEventsForwarder : MonoBehaviour
+{
+    [SerializeField] private SkillRunner runner;
+
+    private void Awake()
+    {
+        if (!runner) runner = GetComponentInParent<SkillRunner>();
+    }
+
+    // Animation Event 함수명으로 이걸 지정
+    public void Hit()
+    {
+        runner?.AnimEvent_Hit();
+    }
+
+    public void End()
+    {
+        runner?.AnimEvent_End();
+    }
+}

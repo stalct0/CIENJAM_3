@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3301da126f4dd7149a594bd90af5fed7, type: 3}
-  m_Name: Storm_W
+  m_Name: Strom_LMB
   m_EditorClassIdentifier: 
-  slot: 2
-  cooldown: 2
-  animatorTrigger: Skill_W
+  slot: 0
+  cooldown: 0.3
+  animatorTrigger: Attack_LMB
   lockMovement: 1
   logic: {fileID: 11400000, guid: 7cf62c4530bdd2b4b90e68df3338b656, type: 2}
