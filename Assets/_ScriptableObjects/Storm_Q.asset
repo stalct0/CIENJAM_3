@@ -21,4 +21,17 @@ MonoBehaviour:
   turnSpeedDegPerSec: 1500
   facingToleranceDeg: 6
   lockMovementWhileTurning: 1
-  vfx: []
+  overrideWeaponPose: 1
+  weaponLocalPosOffset: {x: 0, y: 0, z: 0}
+  weaponLocalEulerOffset: {x: 40, y: -30, z: 30}
+  weaponPoseApplyTiming: 0
+  vfx:
+  - timing: 0
+    prefab: {fileID: 1957574241283590297, guid: 715059cf845bc4947bba1171de629ecf,
+      type: 3}
+    attachTo: 2
+    customSocketName: 
+    localPos: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+    lifeTime: 1
+    follow: 0

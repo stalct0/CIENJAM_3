@@ -3317,12 +3317,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1002fb29bd3dda74ab45475616ff21d8, type: 2}
   - {fileID: 11400000, guid: 9c7f95c27f6d8ba4cb903d6db07cfa66, type: 2}
   - {fileID: 11400000, guid: a860aaafd9a999b4a88b0e3135d179bc, type: 2}
-  cam: {fileID: 0}
+  cam: {fileID: 330585545}
   groundMask:
     serializedVersion: 2
     m_Bits: 256
   swordTip: {fileID: 0}
   swordBase: {fileID: 0}
+  weaponEquipper: {fileID: 5662218297310267929}
 --- !u!1 &8142670827832723784
 GameObject:
   m_ObjectHideFlags: 0

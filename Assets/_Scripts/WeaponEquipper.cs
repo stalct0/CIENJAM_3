@@ -28,6 +28,11 @@ public class WeaponEquipper : MonoBehaviour
     private Transform socket;
     private GameObject spawned;
 
+    private Vector3 baseLocalPos;
+    private Quaternion baseLocalRot;
+    private Vector3 baseLocalScale;
+    private bool baseCached;
+    
     private void Reset()
     {
         animator = GetComponentInChildren<Animator>();
@@ -75,19 +80,15 @@ public class WeaponEquipper : MonoBehaviour
         spawned.transform.localPosition = localPosition;
         spawned.transform.localRotation = Quaternion.Euler(localEulerAngles);
         spawned.transform.localScale = localScale;
-
-        // ===== 핵심: 생성된 무기 인스턴스에서 VFX 소켓을 찾아 SkillRunner에 주입 =====
+        CacheBasePose();
+        
         if (skillRunner)
         {
             Transform tip = FindDeepChild(spawned.transform, swordTipName);
             Transform bas = FindDeepChild(spawned.transform, swordBaseName);
 
-            // 못 찾으면 null로 두되, 디버그로 바로 알게
             skillRunner.swordTip = tip;
             skillRunner.swordBase = bas;
-
-            if (!tip) Debug.LogWarning($"[{name}] SwordTip socket '{swordTipName}' not found in weapon instance.");
-            if (!bas) Debug.LogWarning($"[{name}] SwordBase socket '{swordBaseName}' not found in weapon instance.");
         }
     }
 
@@ -122,5 +123,29 @@ public class WeaponEquipper : MonoBehaviour
                 stack.Push(t.GetChild(i));
         }
         return null;
+    }
+    
+    private void CacheBasePose()
+    {
+        if (!spawned) return;
+        baseLocalPos = spawned.transform.localPosition;
+        baseLocalRot = spawned.transform.localRotation;
+        baseLocalScale = spawned.transform.localScale;
+        baseCached = true;
+    }
+    public void ApplyWeaponOffset(Vector3 localPos, Vector3 localEuler)
+    {
+        if (!spawned) return;
+        if (!baseCached) CacheBasePose();
+
+        spawned.transform.localPosition = baseLocalPos + localPos;
+        spawned.transform.localRotation = baseLocalRot * Quaternion.Euler(localEuler);
+    }
+    public void ResetWeaponOffset()
+    {
+        if (!spawned || !baseCached) return;
+        spawned.transform.localPosition = baseLocalPos;
+        spawned.transform.localRotation = baseLocalRot;
+        spawned.transform.localScale = baseLocalScale;
     }
 }

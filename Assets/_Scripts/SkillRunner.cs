@@ -31,7 +31,7 @@ public class SkillRunner : MonoBehaviour
     private SkillSlot pendingSlot;
     private bool isTurning;
     private Vector3 pendingAimPoint;
-    
+    public WeaponEquipper weaponEquipper; 
     
     // === Simple VFX pooling ===
     private readonly Dictionary<GameObject, Queue<GameObject>> pool = new();
@@ -134,12 +134,13 @@ public class SkillRunner : MonoBehaviour
         
         def.logic.OnStart(this, def);
 
-        // 애니 트리거
         if (!string.IsNullOrEmpty(def.animatorTrigger))
         {
             animator.ResetTrigger(def.animatorTrigger);
             animator.SetTrigger(def.animatorTrigger);
         }
+        if (weaponEquipper && current.overrideWeaponPose)
+            weaponEquipper.ApplyWeaponOffset(current.weaponLocalPosOffset, current.weaponLocalEulerOffset);
     }
     
     private void CancelMove()
@@ -171,7 +172,9 @@ public class SkillRunner : MonoBehaviour
         // 이동 잠금 해제
         if (current.lockMovement && agent)
             agent.isStopped = false;
-
+        
+        if (weaponEquipper && current.overrideWeaponPose)
+            weaponEquipper.ResetWeaponOffset();
         current = null;
     }
 

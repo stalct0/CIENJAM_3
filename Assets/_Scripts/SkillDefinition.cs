@@ -45,6 +45,12 @@ public class SkillDefinition : ScriptableObject
     public float facingToleranceDeg = 6f;       // 이 각도 안으로 들어오면 캐스팅 시작
     public bool lockMovementWhileTurning = true; // 선회 중 이동/agent 정지
     
+    [Header("Weapon Pose Override (optional)")]
+    public bool overrideWeaponPose = false;
+    public Vector3 weaponLocalPosOffset;
+    public Vector3 weaponLocalEulerOffset;
+    public VfxTiming weaponPoseApplyTiming = VfxTiming.OnStart; // OnStart(혹은 AnimStart)에서 적용
+    
     [Header("VFX")]
     public List<VfxSpawn> vfx = new List<VfxSpawn>();
 }
