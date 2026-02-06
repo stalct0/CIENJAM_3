@@ -6,11 +6,13 @@ public class PlayerInputHandler : MonoBehaviour
     public Camera cam;
     public LayerMask groundMask;
     public PlayerMovement mover;
+    public SkillRunner skillRunner;
     
     void Awake()
     {
         if (cam == null) cam = Camera.main;
         if (mover == null) mover = GetComponent<PlayerMovement>();
+        if (skillRunner == null) skillRunner = GetComponent<SkillRunner>();
     }
 
     void Update()
@@ -26,6 +28,11 @@ public class PlayerInputHandler : MonoBehaviour
         if (Physics.Raycast(ray, out RaycastHit hit, 500f, groundMask, QueryTriggerInteraction.Ignore))
         {
             mover.MoveTo(hit.point);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            skillRunner.TryCast(SkillSlot.Q);
         }
     }
 }
