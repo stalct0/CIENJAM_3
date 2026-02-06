@@ -200,7 +200,7 @@ namespace Starter.Shooter
 			if (HasStateAuthority)
 			{
 				// Transfer properties from camera handle to Main Camera.
-				Camera.main.transform.SetPositionAndRotation(CameraHandle.position, CameraHandle.rotation);
+				//Camera.main.transform.SetPositionAndRotation(CameraHandle.position, CameraHandle.rotation);
 			}
 		}
 
