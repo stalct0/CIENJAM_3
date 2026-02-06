@@ -9,11 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3301da126f4dd7149a594bd90af5fed7, type: 3}
-  m_Name: Storm_W
+  m_Script: {fileID: 11500000, guid: 511e99454b027b34689261cd0a6765c1, type: 3}
+  m_Name: DashLogic
   m_EditorClassIdentifier: 
-  slot: 2
-  cooldown: 2
-  animatorTrigger: Skill_W
-  lockMovement: 1
-  logic: {fileID: 11400000, guid: 7cf62c4530bdd2b4b90e68df3338b656, type: 2}
+  distance: 4
+  duration: 0.12
+  backward: 1

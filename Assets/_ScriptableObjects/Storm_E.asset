@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3301da126f4dd7149a594bd90af5fed7, type: 3}
   m_Name: Storm_E
   m_EditorClassIdentifier: 
-  slot: 2
+  slot: 3
   cooldown: 2
-  animatorTrigger: 
+  animatorTrigger: Skill_E
   lockMovement: 1
+  logic: {fileID: 11400000, guid: 4a0c4cab574974646a4a8bae323d38b2, type: 2}

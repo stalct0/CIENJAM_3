@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3301da126f4dd7149a594bd90af5fed7, type: 3}
   m_Name: Storm_Q
   m_EditorClassIdentifier: 
-  slot: 0
+  slot: 1
   cooldown: 2
-  animatorTrigger: 
+  animatorTrigger: Skill_Q
   lockMovement: 1
+  logic: {fileID: 11400000, guid: 7cf62c4530bdd2b4b90e68df3338b656, type: 2}
