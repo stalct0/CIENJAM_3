@@ -51,6 +51,9 @@ public class SkillRunner : MonoBehaviour
     private SkillSlot chargingSlot;     // 어떤 슬롯을 차징 중인지
     private Vector3 chargeAimPoint;     // 차징 시작 시 조준점 고정(원하면 고정)
 
+    public bool IsCharging => isCharging;
+    public bool IsBusy => IsCasting || isTurning || isCharging; // 하나로 묶기
+    
     private void Awake()
     {
         if (!animator) animator = GetComponentInChildren<Animator>();
@@ -244,33 +247,40 @@ public class SkillRunner : MonoBehaviour
         var def = current;
         var slot = chargingSlot;
 
-        // 쿨타임 체크는 발동 시점에서
+        // 차징 종료는 무조건
+        isCharging = false;
+
+        // 쿨이면 "발동은 안 하지만" 상태는 풀어야 함
         if (Time.time < cdEnd[slot])
         {
-            // 쿨이면 발동하지 않고 차징만 해제할지/유지할지 선택 가능
-            // 여기서는 "해제" 처리하고 끝냅니다.
-            isCharging = false;
+            ForceEndChargeState(def); // ✅ 추가
             return;
         }
 
-        // 차징 종료
-        isCharging = false;
-
-        // ✅ 여기서부터 "실제 스킬 시전"으로 취급
         cdEnd[slot] = Time.time + def.cooldown;
 
-        // 로직 OnStart는 공격 발동 시점에 호출 (차징 중엔 호출 안 함)
         def.logic.OnStart(this, def);
 
-        // 공격 애니 트리거
         if (!string.IsNullOrEmpty(def.animatorTrigger))
         {
             animator.ResetTrigger(def.animatorTrigger);
             animator.SetTrigger(def.animatorTrigger);
         }
+    }
+    private void ForceEndChargeState(SkillDefinition def)
+    { 
+        if (agent)
+        {
+            agent.isStopped = false;
+            agent.ResetPath();       // ✅ 추가: 남은 경로 제거
+            agent.velocity = Vector3.zero; // ✅ 추가: 잔속도 제거
+        }
 
-        // 공격이 시작되면, 이제 애니 클립에서 AnimEvent_Start/Move/Hit/End가 정상적으로 날아오면서
-        // 기존 시스템대로 처리됩니다.
+        if (weaponEquipper && def != null && def.overrideWeaponPose)
+            weaponEquipper.ResetWeaponOffset();
+
+        current = null;
+        isCharging = false;          // ✅ 안전하게 다시 한 번
     }
 
     // =========================================================

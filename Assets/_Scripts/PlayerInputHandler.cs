@@ -93,13 +93,12 @@ public class PlayerInputHandler : MonoBehaviour
         if (skillRunner != null)
             skillRunner.SetAimPoint(inputState.hasAimPoint, inputState.aimWorldPoint);
 
-        // 이동 클릭은 캐스팅 중이면 막음(기존 로직 유지)
         if (mover != null && inputState.moveClick && inputState.hasAimPoint)
         {
-            if (skillRunner == null || !skillRunner.IsCasting)
+            if (skillRunner == null || !skillRunner.IsBusy)
                 mover.MoveTo(inputState.moveWorldPoint);
         }
-
+        
         if (skillRunner == null) return;
 
         // ✅ 차징 R은 우선 처리: Down/Up 각각 호출
