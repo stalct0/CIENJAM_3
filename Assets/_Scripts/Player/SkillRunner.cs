@@ -382,6 +382,14 @@ public class SkillRunner : MonoBehaviour
         if (state != State.Casting) return;
         TryStartCastMove(current);
     }
+    public void AnimEvent_GuardEnd()
+    {
+        if (state != State.Casting) return;
+        if (current?.logic == null) return;
+
+        // W 전용 로직이 이 이벤트를 받도록(캐스팅 타입 체크는 로직에서)
+        //current.logic.OnCustomEvent(this, current, "GuardEnd");
+    }
 
     public void AnimEvent_Hit()
     {
