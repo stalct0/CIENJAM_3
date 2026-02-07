@@ -13,7 +13,10 @@ public class PlayerInputHandler : MonoBehaviour
 
         public bool castRDown;
         public bool castRUp;
-
+        
+        public bool castD;
+        public bool castF;
+        
         public bool moveClick;
         public Vector3 moveWorldPoint;
 
@@ -31,12 +34,15 @@ public class PlayerInputHandler : MonoBehaviour
     public PlayerMovement mover;
     public SkillRunner skillRunner;
     public KnockbackController knockback;
+    public SummonerSpellRunner summoner;
 
     void Awake()
     {
         if (cam == null) cam = Camera.main;
         if (mover == null) mover = GetComponent<PlayerMovement>();
         if (skillRunner == null) skillRunner = GetComponent<SkillRunner>();
+        if (knockback == null) knockback = GetComponent<KnockbackController>();
+        if (summoner == null) summoner = GetComponent<SummonerSpellRunner>();
     }
 
     void Update()
@@ -76,6 +82,8 @@ public class PlayerInputHandler : MonoBehaviour
 
         if (Keyboard.current.rKey.wasPressedThisFrame)  inputState.castRDown = true;
         if (Keyboard.current.rKey.wasReleasedThisFrame) inputState.castRUp = true;
+        if (Keyboard.current.dKey.wasPressedThisFrame) inputState.castD = true;
+        if (Keyboard.current.fKey.wasPressedThisFrame) inputState.castF = true;
 
         if (Mouse.current.rightButton.wasPressedThisFrame)
         {
@@ -102,7 +110,12 @@ public class PlayerInputHandler : MonoBehaviour
             // 이동 + 스킬 입력 전달 차단
             return;
         }
-
+        if (summoner != null)
+        {
+            if (inputState.castD) summoner.TryCast(SummonerSlot.D);
+            if (inputState.castF) summoner.TryCast(SummonerSlot.F);
+        }
+        
         if (skillRunner == null) return;
 
         // R은 Down/Up 둘 다 같은 프레임에 올 수 있음 → 둘 다 전달
@@ -125,7 +138,9 @@ public class PlayerInputHandler : MonoBehaviour
 
         inputState.castRDown = false;
         inputState.castRUp = false;
-
+        inputState.castD = false;
+        inputState.castF = false;
+        
         inputState.moveClick = false;
     }
 }

@@ -1711,6 +1711,7 @@ GameObject:
   - component: {fileID: 5944921730592603784}
   - component: {fileID: 2165223636672497450}
   - component: {fileID: 7969266578487608626}
+  - component: {fileID: 5941733949893345456}
   m_Layer: 6
   m_Name: Storm
   m_TagString: Untagged
@@ -1851,6 +1852,8 @@ MonoBehaviour:
     castE: 0
     castRDown: 0
     castRUp: 0
+    castD: 0
+    castF: 0
     moveClick: 0
     moveWorldPoint: {x: 0, y: 0, z: 0}
     hasAimPoint: 0
@@ -1862,6 +1865,7 @@ MonoBehaviour:
   mover: {fileID: 5894739524526931734}
   skillRunner: {fileID: 2467273136986853341}
   knockback: {fileID: 5944921730592603784}
+  summoner: {fileID: 0}
 --- !u!114 &2467273136986853341
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1914,8 +1918,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03332d4d9bd0d084783c86637ca87c68, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHp: 100
   hp: 100
+  invincibleTime: 0
+  enableKnockback: 1
+  knockbackDistance: 1.2
+  knockbackDuration: 0.12
+  lockInputDuringKnockback: 1
+  animator: {fileID: 4949418386563723286}
+  shield: 0
 --- !u!114 &5944921730592603784
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1941,8 +1951,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5d78cc72aa93d341b489eb6181ba37f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ownerId: 0
-  entityId: 0
+  ownerId: 1
+  entityId: 1
   team: 1
 --- !u!136 &7969266578487608626
 CapsuleCollider:
@@ -1967,6 +1977,30 @@ CapsuleCollider:
   m_Height: 1
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &5941733949893345456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4932414756607366036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b34e97db96a31f4491fb5efb3e75f32, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spellD: {fileID: 11400000, guid: 6cc6686685d3aa2409599cad3b58ed8d, type: 2}
+  spellF: {fileID: 11400000, guid: b821603fa7726a7438357eb1e61279fc, type: 2}
+  cam: {fileID: 0}
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 256
+  knockback: {fileID: 5944921730592603784}
+  exhaustRange: 4
+  exhaustTargetMask:
+    serializedVersion: 2
+    m_Bits: 0
+  flashDistance: 5
 --- !u!1 &4960500615755703903
 GameObject:
   m_ObjectHideFlags: 0

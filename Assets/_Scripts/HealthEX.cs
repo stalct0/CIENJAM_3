@@ -14,7 +14,9 @@ public class HealthEX : MonoBehaviour, IDamageable
     [SerializeField] private float knockbackDistance = 1.2f;
     [SerializeField] private float knockbackDuration = 0.12f;
     [SerializeField] private bool lockInputDuringKnockback = true;
-
+    [SerializeField] private Animator animator;
+    [SerializeField] private int shield;
+    
     private KnockbackController kb;
 
     private void Awake()
@@ -22,12 +24,38 @@ public class HealthEX : MonoBehaviour, IDamageable
         kb = GetComponent<KnockbackController>();
         if (!kb) kb = GetComponentInParent<KnockbackController>();
         if (!kb) kb = GetComponentInChildren<KnockbackController>();
+        if (!animator) animator = GetComponentInChildren<Animator>();
     }
 
     public void TakeDamage(DamageInfo info)
     {
         if (Time.time < invUntil) return;
 
+        if (animator && hp > 0)
+        {
+            animator.ResetTrigger("Hit");
+            animator.SetTrigger("Hit");
+        }
+        int dmg = info.amount;
+        // 공격자가 탈진 상태면 피해 감소(주는 피해 감소 구현)
+        if (info.attacker != null)
+        {
+            var ex = info.attacker.GetComponentInParent<ExhaustDebuff>();
+            if (ex != null && ex.IsActive)
+                dmg = Mathf.RoundToInt(dmg * ex.DamageMultiplier);
+        }
+
+        // 보호막 먼저 소모
+        if (shield > 0)
+        {
+            int use = Mathf.Min(shield, dmg);
+            shield -= use;
+            dmg -= use;
+
+            // (*체력 피해를 받지 않으면 경직 X) -> 여기서 dmg==0이면 넉백/경직 처리 안 하면 됨
+            if (dmg <= 0) return;
+        }
+        
         hp -= info.amount;
         invUntil = Time.time + invincibleTime;
 
@@ -59,6 +87,19 @@ public class HealthEX : MonoBehaviour, IDamageable
         Debug.Log($"{name} took {info.amount} from {(info.attacker ? info.attacker.name : "NULL")}. HP={hp}");
 
         if (hp <= 0)
-            Destroy(gameObject);
+        {
+            hp = 0;
+            if (animator)
+            {
+                animator.SetBool("Dead", true);
+            }
+        }
+    }
+    public void AddShield(int amount) => shield += Mathf.Max(0, amount);
+
+    public void RemoveShield(int amount)
+    {
+        shield -= Mathf.Max(0, amount);
+        if (shield < 0) shield = 0;
     }
 }
