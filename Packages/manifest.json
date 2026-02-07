@@ -3,6 +3,7 @@
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.ai.navigation": "2.0.8",
     "com.unity.burst": "1.8.23",
+    "com.unity.cinemachine": "3.1.5",
     "com.unity.cloud.gltfast": "6.4.0",
     "com.unity.collab-proxy": "2.11.3",
     "com.unity.ext.nunit": "2.0.5",
