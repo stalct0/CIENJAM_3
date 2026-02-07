@@ -4,6 +4,10 @@ using TMPro;
 
 public class BattleUIManager : MonoBehaviour
 {
+    public GameObject BluePlayer;
+    public GameObject RedPlayer;
+    public Image BlueHPGauge;
+    public Image RedHPGauge;
     public SkillDefinition[] SkillDefs; // 0~2: Skills, 3~4: Spells
     public Image[] CDImgs; // 0~2: Skill CDs, 3~4: Spell CDs
     public TextMeshProUGUI[] CDTexts;
@@ -113,5 +117,9 @@ public class BattleUIManager : MonoBehaviour
                 }
             }
         }
+
+
+
+        StartCooldown('Q');
     }
 }
