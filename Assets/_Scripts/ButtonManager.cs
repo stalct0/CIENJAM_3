@@ -138,15 +138,19 @@ public class ButtonManager : MonoBehaviour
         {
             case SummonerSpellType.Flash:
                 SpellDButton.GetComponent<Image>().sprite = SpellImages[0].sprite;
+                SpellHolder.spellDImage = SpellImages[0];
                 break;
             case SummonerSpellType.Ghost:
                 SpellDButton.GetComponent<Image>().sprite = SpellImages[1].sprite;
+                SpellHolder.spellDImage = SpellImages[1];
                 break;
             case SummonerSpellType.Barrier:
                 SpellDButton.GetComponent<Image>().sprite = SpellImages[2].sprite;
+                SpellHolder.spellDImage = SpellImages[2];
                 break;
             case SummonerSpellType.Exhaust:
                 SpellDButton.GetComponent<Image>().sprite = SpellImages[3].sprite;
+                SpellHolder.spellDImage = SpellImages[3];
                 break;
             default:
                 break;
@@ -157,15 +161,19 @@ public class ButtonManager : MonoBehaviour
         {
             case SummonerSpellType.Flash:
                 SpellFButton.GetComponent<Image>().sprite = SpellImages[0].sprite;
+                SpellHolder.spellFImage = SpellImages[0];
                 break;
             case SummonerSpellType.Ghost:
                 SpellFButton.GetComponent<Image>().sprite = SpellImages[1].sprite;
+                SpellHolder.spellFImage = SpellImages[1];
                 break;
             case SummonerSpellType.Barrier:
                 SpellFButton.GetComponent<Image>().sprite = SpellImages[2].sprite;
+                SpellHolder.spellFImage = SpellImages[2];
                 break;
             case SummonerSpellType.Exhaust:
                 SpellFButton.GetComponent<Image>().sprite = SpellImages[3].sprite;
+                SpellHolder.spellFImage = SpellImages[3];
                 break;
             default:
                 break;
