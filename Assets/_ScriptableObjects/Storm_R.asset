@@ -21,3 +21,13 @@ MonoBehaviour:
   turnSpeedDegPerSec: 1500
   facingToleranceDeg: 6
   lockMovementWhileTurning: 1
+  overrideWeaponPose: 0
+  weaponLocalPosOffset: {x: 0, y: 0, z: 0}
+  weaponLocalEulerOffset: {x: 0, y: 0, z: 0}
+  weaponPoseApplyTiming: 0
+  castMove: {fileID: 0}
+  isChargeSkill: 1
+  chargeStartTrigger: 
+  maxChargeTime: 3
+  autoReleaseOnMax: 1
+  vfx: []

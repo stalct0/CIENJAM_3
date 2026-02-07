@@ -10,10 +10,13 @@ public class PlayerInputHandler : MonoBehaviour
         public bool castQ;
         public bool castW;
         public bool castE;
-        public bool castR;
 
-        public bool moveClick;          
-        public Vector3 moveWorldPoint;  
+        // R은 차징이라
+        public bool castRDown;
+        public bool castRUp;
+
+        public bool moveClick;
+        public Vector3 moveWorldPoint;
 
         public bool hasAimPoint;
         public Vector3 aimWorldPoint;
@@ -40,16 +43,9 @@ public class PlayerInputHandler : MonoBehaviour
     {
         if (Mouse.current == null || Keyboard.current == null) return;
 
-        // 1) aimPoint는 "매 프레임" 갱신 (스킬이 필요로 함)
         UpdateAimPoint();
-
-        // 2) 입력을 state에만 기록
         ReadInputsIntoState();
-
-        // 3) state를 보고 다른 스크립트들을 구동
         DispatchStateToControllers();
-
-        // 4) 1프레임 트리거들은 리셋 (aimPoint는 유지)
         ClearOneFrameTriggers();
     }
 
@@ -77,7 +73,10 @@ public class PlayerInputHandler : MonoBehaviour
         if (Keyboard.current.qKey.wasPressedThisFrame) inputState.castQ = true;
         if (Keyboard.current.wKey.wasPressedThisFrame) inputState.castW = true;
         if (Keyboard.current.eKey.wasPressedThisFrame) inputState.castE = true;
-        if (Keyboard.current.rKey.wasPressedThisFrame) inputState.castR = true;
+
+        // ✅ R: 누름/뗌 둘 다 기록
+        if (Keyboard.current.rKey.wasPressedThisFrame)  inputState.castRDown = true;
+        if (Keyboard.current.rKey.wasReleasedThisFrame) inputState.castRUp = true;
 
         if (Mouse.current.rightButton.wasPressedThisFrame)
         {
@@ -90,24 +89,36 @@ public class PlayerInputHandler : MonoBehaviour
 
     void DispatchStateToControllers()
     {
+        // aimPoint는 매 프레임 SkillRunner에 전달
         if (skillRunner != null)
             skillRunner.SetAimPoint(inputState.hasAimPoint, inputState.aimWorldPoint);
 
+        // 이동 클릭은 캐스팅 중이면 막음(기존 로직 유지)
         if (mover != null && inputState.moveClick && inputState.hasAimPoint)
         {
             if (skillRunner == null || !skillRunner.IsCasting)
                 mover.MoveTo(inputState.moveWorldPoint);
         }
 
-        // 스킬 우선순위
-        if (skillRunner != null)
+        if (skillRunner == null) return;
+
+        // ✅ 차징 R은 우선 처리: Down/Up 각각 호출
+        if (inputState.castRDown)
         {
-            if (inputState.castLMB) skillRunner.TryCast(SkillSlot.LMB);
-            else if (inputState.castQ) skillRunner.TryCast(SkillSlot.Q);
-            else if (inputState.castW) skillRunner.TryCast(SkillSlot.W);
-            else if (inputState.castE) skillRunner.TryCast(SkillSlot.E);
-            else if (inputState.castR) skillRunner.TryCast(SkillSlot.R);
+            skillRunner.TryPress(SkillSlot.R);
+            return; // 이 프레임엔 다른 스킬 호출 안 함(우선순위 고정)
         }
+        if (inputState.castRUp)
+        {
+            skillRunner.TryRelease(SkillSlot.R);
+            return;
+        }
+
+        // 나머지 스킬 우선순위(기존 유지)
+        if (inputState.castLMB) skillRunner.TryPress(SkillSlot.LMB);
+        else if (inputState.castQ) skillRunner.TryPress(SkillSlot.Q);
+        else if (inputState.castW) skillRunner.TryPress(SkillSlot.W);
+        else if (inputState.castE) skillRunner.TryPress(SkillSlot.E);
     }
 
     void ClearOneFrameTriggers()
@@ -116,7 +127,10 @@ public class PlayerInputHandler : MonoBehaviour
         inputState.castQ = false;
         inputState.castW = false;
         inputState.castE = false;
-        inputState.castR = false;
+
+        inputState.castRDown = false;
+        inputState.castRUp = false;
+
         inputState.moveClick = false;
     }
 }
