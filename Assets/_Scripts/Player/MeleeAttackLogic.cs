@@ -9,10 +9,7 @@ public class MeleeAttackLogic : SkillLogic
     public float range = 2.0f;
     public float radius = 1.2f;
     public float angleDeg = 90f;
-
-    [Header("Base damage (before charge scaling)")]
-    public int damage = 10;
-
+    
     [Header("Target mask (physics candidate filter)")]
     public LayerMask targetMask;
 

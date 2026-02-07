@@ -803,4 +803,16 @@ public class SkillRunner : MonoBehaviour
 
         return Mathf.Max(0.1f, duration + startLifetime);
     }
+    
+    public float GetCooldownRemaining(SkillSlot slot)
+    {
+        if (!cdEnd.TryGetValue(slot, out float end)) return 0f;
+        return Mathf.Max(0f, end - Time.time);
+    }
+
+    public float GetCooldownDuration(SkillSlot slot)
+    {
+        if (!map.TryGetValue(slot, out var def) || def == null) return 1f;
+        return Mathf.Max(0.01f, def.cooldown);
+    }
 }

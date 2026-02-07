@@ -167,6 +167,7 @@ MonoBehaviour:
   UltMask: {fileID: 1898129985}
   UltGauge: {fileID: 1926175190}
   UltText: {fileID: 449731998}
+  playerRunner: {fileID: 2109962679}
 --- !u!4 &180165861
 Transform:
   m_ObjectHideFlags: 0
@@ -3608,6 +3609,18 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 421460759541080666}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2109962679 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2467273136986853341, guid: 574cc0596cb592844bb53b6751eb0286,
+    type: 3}
+  m_PrefabInstance: {fileID: 421460759541080666}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2109962671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c869ad681a21048459cba2d0dd5f5e7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &2109962687
 MonoBehaviour:
   m_ObjectHideFlags: 0
