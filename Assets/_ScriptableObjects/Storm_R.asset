@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   slot: 4
   cooldown: 2
-  animatorTrigger: Skill_R
+  animatorTrigger: Skill_R_Attack
   lockMovement: 1
   logic: {fileID: 11400000, guid: 7cf62c4530bdd2b4b90e68df3338b656, type: 2}
   requireFacing: 1
@@ -27,7 +27,7 @@ MonoBehaviour:
   weaponPoseApplyTiming: 0
   castMove: {fileID: 0}
   isChargeSkill: 1
-  chargeStartTrigger: 
+  chargeStartTrigger: Skill_R_Charge
   maxChargeTime: 3
   autoReleaseOnMax: 1
   vfx: []
