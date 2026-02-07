@@ -145,7 +145,14 @@ public class MeleeAttackLogic : SkillLogic
                 amount = finalDamage,
                 hitPoint = col.ClosestPoint(origin),
                 hitDir = to.normalized,
-                skill = def
+                skill = def,
+                
+                // ✅ R은 가드 절반 관통
+                guardBypass = (def != null && def.slot == SkillSlot.R) ? GuardBypassType.PartialBypass : GuardBypassType.None,
+                guardBypassFactor = 0.5f,
+
+                // (선택) 스킬별 넉백이 있으면 여기 설정
+                hasKnockback = false,
             };
 
             target.TakeDamage(info);

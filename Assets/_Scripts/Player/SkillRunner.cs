@@ -239,6 +239,10 @@ public class SkillRunner : MonoBehaviour
         if (def.lockMovement)
             StopAgentImmediate();
 
+        var defense = GetComponent<DefenseController>();
+        if (defense && def.slot == SkillSlot.R)
+            defense.externalKnockbackImmune = true;
+        
         // 차지 "시작" 애니
         if (!string.IsNullOrEmpty(def.chargeStartTrigger))
         {
@@ -286,7 +290,11 @@ public class SkillRunner : MonoBehaviour
 
         var def = current;
         var slot = currentSlot;
-
+        
+        var defense = GetComponent<DefenseController>();
+        if (defense && def.slot == SkillSlot.R)
+            defense.externalKnockbackImmune = false;
+        
         // 차지 시작 트리거는 끊어줌
         if (!string.IsNullOrEmpty(def.chargeStartTrigger))
             animator.ResetTrigger(def.chargeStartTrigger);
@@ -403,6 +411,9 @@ public class SkillRunner : MonoBehaviour
         StopCastMoveIfRunning();
         castMoveStartedThisCast = false;
         castMoveLock = false;
+        
+        var defense = GetComponent<DefenseController>();
+        if (defense) defense.externalKnockbackImmune = false;
 
         if (agent)
         {

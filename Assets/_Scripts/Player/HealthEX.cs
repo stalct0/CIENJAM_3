@@ -30,13 +30,53 @@ public class HealthEX : MonoBehaviour, IDamageable
     public void TakeDamage(DamageInfo info)
     {
         if (Time.time < invUntil) return;
+        int dmg = info.amount;
+        
+        var defense = GetComponent<DefenseController>();
+        if (defense && defense.guardActive && info.attacker != null)
+        {
+            bool fromFront = defense.IsAttackFromFront(info.attacker.transform.position);
+            if (fromFront)
+            {
+                if (info.guardBypass == GuardBypassType.None)
+                {
+                    dmg = 0; // 완전 가드
+                }
+                else if (info.guardBypass == GuardBypassType.PartialBypass)
+                {
+                    float f = Mathf.Clamp01(info.guardBypassFactor <= 0f ? 1f : info.guardBypassFactor);
+                    dmg = Mathf.RoundToInt(dmg * f); // R은 0.5
+                }
+                else if (info.guardBypass == GuardBypassType.FullBypass)
+                {
+                    // 그대로
+                }
+            }
+        }
+        // 공격자가 탈진 상태면 피해 감소
+        if (info.attacker != null)
+        {
+            var ex = info.attacker.GetComponentInParent<ExhaustDebuff>();
+            if (ex != null && ex.IsActive)
+                dmg = Mathf.RoundToInt(dmg * ex.DamageMultiplier);
+        }
 
+        // 보호막 먼저 소모
+        if (shield > 0)
+        {
+            int use = Mathf.Min(shield, dmg);
+            shield -= use;
+            dmg -= use;
+            if (dmg <= 0) return; // 체력피해 없으면 경직/넉백도 없음
+        }
+        
         if (animator && hp > 0)
         {
             animator.ResetTrigger("Hit");
             animator.SetTrigger("Hit");
         }
-        int dmg = info.amount;
+        
+        
         // 공격자가 탈진 상태면 피해 감소(주는 피해 감소 구현)
         if (info.attacker != null)
         {
@@ -56,11 +96,18 @@ public class HealthEX : MonoBehaviour, IDamageable
             if (dmg <= 0) return;
         }
         
-        hp -= info.amount;
+        hp -= dmg;
         invUntil = Time.time + invincibleTime;
-
+        bool canKnockback = enableKnockback && kb != null;
+        if (canKnockback)
+        {
+            // 방어태세 or 외부면역이면 넉백 무시
+            if (defense != null && defense.IsKnockbackImmune)
+                canKnockback = false;
+        }
+        
         // ✅ 넉백 적용 (스킬은 끊지 않고, 입력만 잠그는 구조)
-        if (enableKnockback && kb != null)
+        if (canKnockback)
         {
             Vector3 from;
 
@@ -80,7 +127,14 @@ public class HealthEX : MonoBehaviour, IDamageable
                 dir.Normalize();
                 from = transform.position - dir;
             }
-
+            
+            // ✅ 스킬이 넉백 파라미터를 들고오면 그걸 우선, 아니면 기존 고정값 사용
+            float dist = info.hasKnockback ? info.knockbackDistance : knockbackDistance;
+            float dur  = info.hasKnockback ? info.knockbackDuration  : knockbackDuration;
+            bool lockInput = info.hasKnockback
+                ? info.lockInputDuringKnockback
+                : lockInputDuringKnockback;
+            
             kb.ApplyKnockback(from, knockbackDistance, knockbackDuration, lockInputDuringKnockback);
         }
 
