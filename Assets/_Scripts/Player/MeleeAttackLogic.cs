@@ -9,10 +9,7 @@ public class MeleeAttackLogic : SkillLogic
     public float range = 2.0f;
     public float radius = 1.2f;
     public float angleDeg = 90f;
-
-    [Header("Base damage (before charge scaling)")]
-    public int damage = 10;
-
+    
     [Header("Target mask (physics candidate filter)")]
     public LayerMask targetMask;
 
@@ -148,8 +145,8 @@ public class MeleeAttackLogic : SkillLogic
                 skill = def,
                 
                 // ✅ R은 가드 절반 관통
-                guardBypass = (def != null && def.slot == SkillSlot.R) ? GuardBypassType.PartialBypass : GuardBypassType.None,
-                guardBypassFactor = 0.5f,
+                guardBypass = def != null ? def.guardBypass : GuardBypassType.None,
+                guardBypassFactor = def != null ? def.guardBypassFactor : 1f,
 
                 // (선택) 스킬별 넉백이 있으면 여기 설정
                 hasKnockback = false,
