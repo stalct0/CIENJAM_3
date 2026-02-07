@@ -712,7 +712,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   PlayerPrefab: {fileID: 1526919877228550752, guid: cb178ad971c9ae54abb7feb2ef6cbf4d,
     type: 3}
-  _LocalPlayer: {fileID: 0}
 --- !u!114 &513123552
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1594,7 +1593,8 @@ MonoBehaviour:
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 453965ba5d669fb42b4a1960236371f6, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 835ab49ecec80b44b96e038a40a38f47, type: 2}
-  m_fontSharedMaterials: []
+  m_fontSharedMaterials:
+  - {fileID: 2100000, guid: 835ab49ecec80b44b96e038a40a38f47, type: 2}
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
@@ -1850,7 +1850,8 @@ MonoBehaviour:
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 453965ba5d669fb42b4a1960236371f6, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: 835ab49ecec80b44b96e038a40a38f47, type: 2}
-  m_fontSharedMaterials: []
+  m_fontSharedMaterials:
+  - {fileID: 2100000, guid: 835ab49ecec80b44b96e038a40a38f47, type: 2}
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
