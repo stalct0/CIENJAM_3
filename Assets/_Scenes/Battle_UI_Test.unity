@@ -1887,6 +1887,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7fd5f561022e34233b36c0706fcecea5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  BlueHPGauge: {fileID: 411054565}
+  RedHPGauge: {fileID: 2051862776}
   SkillDefs:
   - {fileID: 11400000, guid: 9c27935cb8bf86342b52c1eab123ab6c, type: 2}
   - {fileID: 11400000, guid: 1002fb29bd3dda74ab45475616ff21d8, type: 2}
