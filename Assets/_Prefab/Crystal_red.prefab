@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 2052487530843482603}
   - component: {fileID: 7683986683386134585}
   - component: {fileID: 1233110353105061868}
+  - component: {fileID: 1284457736504290826}
   m_Layer: 0
   m_Name: Crystal_red
   m_TagString: Untagged
@@ -86,3 +87,23 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &1284457736504290826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 482211429826805703}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03332d4d9bd0d084783c86637ca87c68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hp: 16
+  invincibleTime: 0
+  enableKnockback: 0
+  knockbackDistance: 1.2
+  knockbackDuration: 0.12
+  lockInputDuringKnockback: 1
+  animator: {fileID: 0}
+  shield: 0

@@ -5,7 +5,7 @@ using TMPro;
 public class BattleTimer : MonoBehaviour
 {
     TextMeshProUGUI timerText;
-    float battleTime; // 3 minutes
+    public float battleTime; 
     int minutes;
     int seconds;
 
