@@ -527,20 +527,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GameManager: {fileID: 5446807034574121355}
   CanvasGroup: {fileID: 533876790}
-  ChickenCount: {fileID: 676661863}
-  BestHunter: {fileID: 1672790147}
-  AliveGroup: {fileID: 1596872902}
-  DeathGroup: {fileID: 119246640}
-  HealthIndicators:
-  - {fileID: 803003307}
-  - {fileID: 1161235686}
-  - {fileID: 1447627734}
-  - {fileID: 469694148}
-  HitIndicator: {fileID: 1152280794}
-  AudioSource: {fileID: 1259515377}
-  ChickenKillClip: {fileID: 8300000, guid: dc86f3bef8384e145b23fba67a4f02ad, type: 3}
-  HitReceivedClip: {fileID: 8300000, guid: ef7a92aa16b64ab4bb59e7af66aed3d9, type: 3}
-  DeathClip: {fileID: 8300000, guid: 960fba484aacf9645a8c6f23b9672dac, type: 3}
 --- !u!1 &566763799
 GameObject:
   m_ObjectHideFlags: 0
