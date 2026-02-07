@@ -13,8 +13,10 @@ MonoBehaviour:
   m_Name: Storm_W
   m_EditorClassIdentifier: 
   slot: 2
-  cooldown: 2
-  baseDamage: 10
+  cooldown: 8
+  baseDamage: 7
+  guardBypass: 0
+  guardBypassFactor: 0.5
   useChargeDamage: 0
   minChargeDamage: 10
   maxChargeDamage: 30

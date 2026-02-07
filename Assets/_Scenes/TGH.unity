@@ -3621,19 +3621,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c869ad681a21048459cba2d0dd5f5e7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &2109962687
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2109962671}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b9f187ae610e51b44b3aaf3e71084b1d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  gauge: 0
 --- !u!1001 &421460759541080666
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3712,14 +3699,21 @@ PrefabInstance:
       propertyPath: cam
       value: 
       objectReference: {fileID: 330585545}
+    - target: {fileID: 8143942197226256889, guid: 574cc0596cb592844bb53b6751eb0286,
+        type: 3}
+      propertyPath: previewSkill
+      value: 
+      objectReference: {fileID: 11400000, guid: 9c27935cb8bf86342b52c1eab123ab6c,
+        type: 2}
+    - target: {fileID: 8143942197226256889, guid: 574cc0596cb592844bb53b6751eb0286,
+        type: 3}
+      propertyPath: drawOnlyWhenCasting
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 4932414756607366036, guid: 574cc0596cb592844bb53b6751eb0286,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2109962687}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 574cc0596cb592844bb53b6751eb0286, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
