@@ -1715,6 +1715,7 @@ GameObject:
   - component: {fileID: 5275770540742136581}
   - component: {fileID: 2341760532309210022}
   - component: {fileID: 8143942197226256889}
+  - component: {fileID: 8961080576749229715}
   m_Layer: 6
   m_Name: Storm
   m_TagString: Untagged
@@ -2048,10 +2049,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   runner: {fileID: 2467273136986853341}
   drawOnlyWhenCasting: 1
-  previewSkill: {fileID: 0}
+  previewSkill: {fileID: 11400000, guid: 9c27935cb8bf86342b52c1eab123ab6c, type: 2}
   gizmoColor: {r: 1, g: 0.2, b: 0.2, a: 0.6}
   arcColor: {r: 1, g: 0.8, b: 0.2, a: 0.9}
   arcSegments: 24
+--- !u!114 &8961080576749229715
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4932414756607366036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d26a5d1e46171084aa5834c8c4f26641, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  requireKnockbackToFall: 1
+  fallShowTime: 0.8
+  agent: {fileID: 0}
+  knockback: {fileID: 0}
+  health: {fileID: 0}
+  rb: {fileID: 0}
+  mainCollider: {fileID: 0}
+  respawnInsteadOfDeath: 0
+  respawnPoint: {fileID: 0}
 --- !u!1 &4960500615755703903
 GameObject:
   m_ObjectHideFlags: 0
