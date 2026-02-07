@@ -130,7 +130,8 @@ public class MeleeAttackLogic : SkillLogic
             // ==============================
             // Final Damage (charge scaled)
             // ==============================
-            int finalDamage = Mathf.RoundToInt(damage * damageScale);
+            int baseDmg = runner.GetCurrentDamage(def); // def.useChargeDamage면 min~max로 계산됨
+            int finalDamage = Mathf.RoundToInt(baseDmg * damageScale);
             CombatIdentity attackerId = runner.GetComponentInParent<CombatIdentity>();
             if (attackerId == null) attackerId = runner.GetComponentInChildren<CombatIdentity>();
             
