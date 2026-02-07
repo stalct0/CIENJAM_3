@@ -51,25 +51,6 @@ public class Crystal : MonoBehaviour
 
         if (isSpawned)
         {
-            if (BlueCrystal.GetComponent<HealthEX>().hp <= 0)
-            {
-                Destroy(BlueCrystal);
-                // Charge red team ult gauge
-                isOneDestroyed = !isOneDestroyed;
-                if (!isOneDestroyed) // both crystals destroyed
-                    SpawnEnd();
-                
-            }
-
-            if (RedCrystal.GetComponent<HealthEX>().hp <= 0)
-            {
-                Destroy(RedCrystal);
-                // Charge blue team ult gauge
-                isOneDestroyed = !isOneDestroyed;
-                if (!isOneDestroyed) // both crystals destroyed
-                    SpawnEnd();
-            }
-
             if (isOneDestroyed)
             {
                 timeLimit += Time.deltaTime;
@@ -83,9 +64,14 @@ public class Crystal : MonoBehaviour
     {
         if (!isSpawned)
         {
-            Instantiate(BlueCrystal, new Vector3(-randomX, 0.5f, randomZ) + fieldTransform.position, Quaternion.identity);
-            Instantiate(RedCrystal, new Vector3(randomX, 0.5f, randomZ) + fieldTransform.position, Quaternion.identity);
+            GameObject blue = Instantiate(BlueCrystal, new Vector3(-randomX, 0.5f, randomZ) + fieldTransform.position, Quaternion.identity);
+            SetupCrystal(blue, TeamId.A);
+
+            GameObject red = Instantiate(RedCrystal, new Vector3(randomX, 0.5f, randomZ) + fieldTransform.position, Quaternion.identity);
+            SetupCrystal(red, TeamId.B);
+
             isSpawned = true;
+            
         }
     }
 
@@ -106,5 +92,13 @@ public class Crystal : MonoBehaviour
         crystalTimer = 0f;
         timeLimit = 0f;
         isSpawned = false;
+    }
+    
+    void SetupCrystal(GameObject crystal, TeamId ownerTeam)
+    {
+        // 1. 접근 규칙
+        var rule = crystal.GetComponent<CrystalAccessRule>();
+        rule.ownerTeam = ownerTeam;
+        rule.access = CrystalAccessType.EnemyOnly;
     }
 }
