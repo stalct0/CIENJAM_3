@@ -25,6 +25,7 @@ MonoBehaviour:
   weaponLocalPosOffset: {x: 0, y: 0, z: 0}
   weaponLocalEulerOffset: {x: 40, y: -45, z: 30}
   weaponPoseApplyTiming: 0
+  castMove: {fileID: 11400000, guid: 72728fdd531b1da4897314c2de9a8631, type: 2}
   vfx:
   - timing: 0
     prefab: {fileID: 1957574241283590297, guid: 715059cf845bc4947bba1171de629ecf,

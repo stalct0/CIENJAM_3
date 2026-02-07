@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a2711de38bed2749bc5decaa3519b06, type: 3}
   m_Name: Qmove
   m_EditorClassIdentifier: 
-  distance: 2
-  duration: 0.15
+  distance: 1
+  duration: 0.1
   speedCurve:
     serializedVersion: 2
     m_Curve:
@@ -41,4 +41,4 @@ MonoBehaviour:
   direction: 0
   allowSteer: 0
   blockNormalMove: 1
-  stopOnHit: 1
+  stopOnHit: 0
