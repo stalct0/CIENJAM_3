@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d546de7730d5df447a453f4212a468e9, type: 3}
   m_Name: MeleeLogicR
   m_EditorClassIdentifier: 
-  range: 1.8
-  radius: 1.2
-  angleDeg: 60
+  range: 2
+  radius: 1.4
+  angleDeg: 120
   targetMask:
     serializedVersion: 2
     m_Bits: 64

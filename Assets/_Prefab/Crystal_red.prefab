@@ -11,8 +11,11 @@ GameObject:
   - component: {fileID: 2052487530843482603}
   - component: {fileID: 7683986683386134585}
   - component: {fileID: 1233110353105061868}
-  - component: {fileID: 1284457736504290826}
-  m_Layer: 0
+  - component: {fileID: 283284210245183290}
+  - component: {fileID: -4146936422773570457}
+  - component: {fileID: 8164716495006407844}
+  - component: {fileID: 2014159533262732470}
+  m_Layer: 6
   m_Name: Crystal_red
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -87,7 +90,30 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &1284457736504290826
+--- !u!136 &283284210245183290
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 482211429826805703}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.7394026
+  m_Height: 3.7226052
+  m_Direction: 1
+  m_Center: {x: -0.011151283, y: 0.081029646, z: 0.019257335}
+--- !u!114 &-4146936422773570457
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -96,14 +122,42 @@ MonoBehaviour:
   m_GameObject: {fileID: 482211429826805703}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 03332d4d9bd0d084783c86637ca87c68, type: 3}
+  m_Script: {fileID: 11500000, guid: b343630f1db52bd4aa0a99950727fa47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ultGainOnDestroy: 34
+  destroySelfOnTrigger: 0
+--- !u!114 &8164716495006407844
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 482211429826805703}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39f08fd909d9da34c843ff755118db79, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHp: 16
   hp: 16
-  invincibleTime: 0
-  enableKnockback: 0
-  knockbackDistance: 1.2
-  knockbackDuration: 0.12
-  lockInputDuringKnockback: 1
-  animator: {fileID: 0}
-  shield: 0
+  destroyOnZero: 1
+  destroyDelay: 0
+  logDamage: 1
+  onDestroyedBy:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &2014159533262732470
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 482211429826805703}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 091dc3f342a6dad4ab40f1a131ea9e8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ownerTeam: 2
+  access: 1
