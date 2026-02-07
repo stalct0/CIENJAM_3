@@ -30,4 +30,42 @@ MonoBehaviour:
   chargeStartTrigger: Skill_R_Charge
   maxChargeTime: 3
   autoReleaseOnMax: 1
-  vfx: []
+  chargeScale:
+    minVfxScale: 1
+    maxVfxScale: 2.5
+    minHitScale: 1
+    maxHitScale: 2
+    curve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 1
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  vfx:
+  - timing: 0
+    prefab: {fileID: 5942177893964023165, guid: 438c0b7b02dcafa4996592b62d22671f,
+      type: 3}
+    attachTo: 2
+    customSocketName: 
+    localPos: {x: 0.6, y: -0.7, z: 0}
+    localEuler: {x: -50, y: 90, z: 0}
+    lifeTime: 2
+    follow: 0

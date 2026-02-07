@@ -11,7 +11,6 @@ public class PlayerInputHandler : MonoBehaviour
         public bool castW;
         public bool castE;
 
-        // R은 차징이라
         public bool castRDown;
         public bool castRUp;
 
@@ -74,14 +73,12 @@ public class PlayerInputHandler : MonoBehaviour
         if (Keyboard.current.wKey.wasPressedThisFrame) inputState.castW = true;
         if (Keyboard.current.eKey.wasPressedThisFrame) inputState.castE = true;
 
-        // ✅ R: 누름/뗌 둘 다 기록
         if (Keyboard.current.rKey.wasPressedThisFrame)  inputState.castRDown = true;
         if (Keyboard.current.rKey.wasReleasedThisFrame) inputState.castRUp = true;
 
         if (Mouse.current.rightButton.wasPressedThisFrame)
         {
             inputState.moveClick = true;
-
             if (inputState.hasAimPoint)
                 inputState.moveWorldPoint = inputState.aimWorldPoint;
         }
@@ -89,31 +86,23 @@ public class PlayerInputHandler : MonoBehaviour
 
     void DispatchStateToControllers()
     {
-        // aimPoint는 매 프레임 SkillRunner에 전달
         if (skillRunner != null)
             skillRunner.SetAimPoint(inputState.hasAimPoint, inputState.aimWorldPoint);
 
+        // 이동 클릭은 Busy면 막음
         if (mover != null && inputState.moveClick && inputState.hasAimPoint)
         {
             if (skillRunner == null || !skillRunner.IsBusy)
                 mover.MoveTo(inputState.moveWorldPoint);
         }
-        
+
         if (skillRunner == null) return;
 
-        // ✅ 차징 R은 우선 처리: Down/Up 각각 호출
-        if (inputState.castRDown)
-        {
-            skillRunner.TryPress(SkillSlot.R);
-            return; // 이 프레임엔 다른 스킬 호출 안 함(우선순위 고정)
-        }
-        if (inputState.castRUp)
-        {
-            skillRunner.TryRelease(SkillSlot.R);
-            return;
-        }
+        // R은 Down/Up 둘 다 같은 프레임에 올 수 있음 → 둘 다 전달
+        if (inputState.castRDown) skillRunner.TryPress(SkillSlot.R);
+        if (inputState.castRUp)   skillRunner.TryRelease(SkillSlot.R);
 
-        // 나머지 스킬 우선순위(기존 유지)
+        // 다른 키들은 한 프레임에 하나만
         if (inputState.castLMB) skillRunner.TryPress(SkillSlot.LMB);
         else if (inputState.castQ) skillRunner.TryPress(SkillSlot.Q);
         else if (inputState.castW) skillRunner.TryPress(SkillSlot.W);

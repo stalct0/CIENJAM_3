@@ -1,79 +1,107 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Reflection;
 
 [CreateAssetMenu(menuName = "Game/Skill Logic/Melee Attack")]
 public class MeleeAttackLogic : SkillLogic
 {
+    [Header("Base hit shape")]
     public float range = 2.0f;
     public float radius = 1.2f;
     public float angleDeg = 90f;
+
+    [Header("Damage")]
     public int damage = 10;
+
+    [Header("Masks")]
     public LayerMask targetMask;
 
-    
     [Header("Optional")]
-    public bool checkLineOfSight = false;         // 벽 뒤 타격 방지
-    public LayerMask obstacleMask;                // 벽/장애물 레이어
+    public bool checkLineOfSight = false;
+    public LayerMask obstacleMask;
 
-    // NonAlloc 버퍼 (ScriptableObject는 공유되므로 크기는 넉넉히)
     const int MAX_HITS = 32;
     readonly Collider[] _buffer = new Collider[MAX_HITS];
-
-    // 한 번 공격에서 중복 타격 방지용 (공유 SO라 runner별로 관리가 필요하면 runner쪽에 두는게 더 안전)
     readonly HashSet<int> _hitSet = new HashSet<int>();
-    
+
+    // 리플렉션 캐시 (있으면 사용, 없으면 1.0 처리)
+    static PropertyInfo _piHitScale;
+    static PropertyInfo _piDamageScale;
+
     public override void OnStart(SkillRunner runner, SkillDefinition def)
     {
+        // 필요 없으면 비워도 됨
     }
 
     public override void OnAnimHit(SkillRunner runner, SkillDefinition def)
     {
+        if (runner == null) return;
+
         _hitSet.Clear();
 
         Vector3 origin = runner.transform.position + Vector3.up * 1.0f;
         Vector3 forward = runner.transform.forward;
         forward.y = 0f;
+
+        if (forward.sqrMagnitude < 0.0001f)
+            forward = Vector3.forward;
+
         forward.Normalize();
 
-        // 중심점을 앞으로 당겨서 구역이 "전방"에 더 몰리게
+        // ✅ 차지 기반 판정 스케일 (없으면 1.0)
+        float hitScale = GetRunnerScale(runner, ref _piHitScale, "CurrentHitScale", 1f);
+        hitScale = Mathf.Max(0.01f, hitScale);
+
+        // ✅ 차지 기반 데미지 스케일 (없으면 1.0)
+        float damageScale = GetRunnerScale(runner, ref _piDamageScale, "CurrentDamageScale", 1f);
+        damageScale = Mathf.Max(0.01f, damageScale);
+
+        // 차지 비례로 반경 증가
+        float scaledRadius = radius * hitScale;
+
+        // 전방 중심(기본은 range 그대로, radius만 커짐)
         Vector3 center = origin + forward * (range * 0.5f);
 
-        int count = Physics.OverlapSphereNonAlloc(center, radius, _buffer, targetMask, QueryTriggerInteraction.Ignore);
+        int count = Physics.OverlapSphereNonAlloc(
+            center,
+            scaledRadius,
+            _buffer,
+            targetMask,
+            QueryTriggerInteraction.Ignore
+        );
 
         for (int i = 0; i < count; i++)
         {
             Collider c = _buffer[i];
             if (c == null) continue;
 
-            // 자기 자신 제외 (runner의 콜라이더가 타겟 마스크에 들어가 있으면 맞을 수 있음)
+            // 자기 자신 제외
             if (c.transform.root == runner.transform.root) continue;
 
-            // 실제 피격 대상(Health 같은)이 어디 달렸는지 찾기
-            // 보통은 root나 상위에 달려있게 설계합니다.
             IDamageable dmg = c.GetComponentInParent<IDamageable>();
             if (dmg == null) continue;
 
-            // 중복 피격 방지 (대상 오브젝트 기준)
-            int id = (dmg as Component).gameObject.GetInstanceID();
+            int id = ((Component)dmg).gameObject.GetInstanceID();
             if (!_hitSet.Add(id)) continue;
 
-            // 각도 체크
-            Vector3 to = ( (Component)dmg ).transform.position - runner.transform.position;
+            Vector3 to = ((Component)dmg).transform.position - runner.transform.position;
             to.y = 0f;
             if (to.sqrMagnitude < 0.0001f) continue;
 
+            // 부채꼴 각도 체크
             float a = Vector3.Angle(forward, to.normalized);
             if (a > angleDeg * 0.5f) continue;
 
-            // 거리 체크(선택): OverlapSphere만으로도 대충 되지만, range를 확실히 쓰고 싶으면
-            if (to.magnitude > range + radius) continue;
+            // 거리 체크 (radius 커진 만큼 여유 반영)
+            if (to.magnitude > range + scaledRadius) continue;
 
-            // 벽 뒤 타격 방지(선택)
+            // 시야 가림 체크(옵션)
             if (checkLineOfSight)
             {
                 Vector3 targetPoint = c.ClosestPoint(origin);
                 Vector3 dir = (targetPoint - origin);
                 float dist = dir.magnitude;
+
                 if (dist > 0.001f)
                 {
                     dir /= dist;
@@ -82,11 +110,13 @@ public class MeleeAttackLogic : SkillLogic
                 }
             }
 
-            // 데미지 적용
+            // ✅ 차지 비례 데미지 적용
+            int finalDamage = runner.GetCurrentDamage(def);
+            
             var info = new DamageInfo
             {
                 attacker = runner.gameObject,
-                amount = damage,
+                amount = finalDamage,
                 hitPoint = c.ClosestPoint(origin),
                 hitDir = to.normalized,
                 skill = def
@@ -94,5 +124,22 @@ public class MeleeAttackLogic : SkillLogic
 
             dmg.TakeDamage(info);
         }
+    }
+
+    private static float GetRunnerScale(SkillRunner runner, ref PropertyInfo cache, string propName, float fallback)
+    {
+        if (runner == null) return fallback;
+
+        if (cache == null)
+        {
+            cache = runner.GetType().GetProperty(propName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        }
+
+        if (cache == null) return fallback;
+
+        object v = cache.GetValue(runner, null);
+        if (v is float f) return f;
+
+        return fallback;
     }
 }

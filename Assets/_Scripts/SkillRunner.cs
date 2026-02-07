@@ -1,10 +1,18 @@
 using UnityEngine;
 using UnityEngine.AI;
-using System.Collections.Generic;
 using System.Collections;
+using System.Collections.Generic;
 
 public class SkillRunner : MonoBehaviour
 {
+    private enum State
+    {
+        Idle,
+        Turning,
+        Charging,
+        Casting
+    }
+
     [Header("References")]
     [SerializeField] private Animator animator;
     [SerializeField] private NavMeshAgent agent;
@@ -23,37 +31,49 @@ public class SkillRunner : MonoBehaviour
     public Transform swordTip;
     public Transform swordBase;
 
+    public WeaponEquipper weaponEquipper;
+
+    // ===== Aim point from input =====
     private bool hasAimPoint;
     private Vector3 aimPoint;
 
-    private SkillDefinition current;
-    private SkillDefinition pending;
+    // ===== Runtime state =====
+    private State state = State.Idle;
+
+    private SkillDefinition current;         // Charging/Casting 중인 스킬
+    private SkillSlot currentSlot;
+
+    private SkillDefinition pending;         // Turning 중 대기 스킬
     private SkillSlot pendingSlot;
-    private bool isTurning;
     private Vector3 pendingAimPoint;
+    private bool pendingReleaseOnStart;      // Turning 중에 Up이 들어오면 true
 
-    public WeaponEquipper weaponEquipper;
+    // ===== Charge =====
+    private float chargeStartTime;
+    private Vector3 chargeAimPoint;
+    private float charge01;                  // 0~1 (차지 중)
+    private float releasedCharge01;          // Release 시점에 고정된 값
 
-    private readonly Dictionary<GameObject, Queue<GameObject>> pool = new();
-    private readonly Dictionary<string, Transform> socketCache = new();
+    public bool IsCasting => state == State.Casting;
+    public bool IsCharging => state == State.Charging;
+    public bool IsBusy => state != State.Idle;   // Turning/Charging/Casting 전부 Busy
 
-    public bool IsCasting => current != null;
+    public float CurrentCharge01 => (state == State.Charging) ? charge01 : releasedCharge01;
+    public float CurrentHitScale => EvaluateHitScale(current, CurrentCharge01);
+    public float CurrentVfxScale => EvaluateVfxScale(current, CurrentCharge01);
+    public float CurrentDamageScale => EvaluateDamageScale(current, CurrentCharge01);
 
-    // ===== Cast-Move Runtime State =====
+    // ===== Cast Move =====
     private Coroutine castMoveCo;
     private bool castMoveLock;
     private bool castMoveStartedThisCast;
     public bool CastMoveLock => castMoveLock;
 
-    // ===== Charge Runtime State =====
-    private bool isCharging;
-    private float chargeStartTime;
-    private SkillSlot chargingSlot;     // 어떤 슬롯을 차징 중인지
-    private Vector3 chargeAimPoint;     // 차징 시작 시 조준점 고정(원하면 고정)
+    // ===== VFX pooling =====
+    private readonly Dictionary<GameObject, Queue<GameObject>> pool = new();
+    private readonly Dictionary<string, Transform> socketCache = new();
+    private readonly Dictionary<GameObject, Vector3> prefabBaseScale = new();
 
-    public bool IsCharging => isCharging;
-    public bool IsBusy => IsCasting || isTurning || isCharging; // 하나로 묶기
-    
     private void Awake()
     {
         if (!animator) animator = GetComponentInChildren<Animator>();
@@ -70,195 +90,221 @@ public class SkillRunner : MonoBehaviour
 
     private void Update()
     {
-        // 선회 처리(캐스트 시작 전에 정면 맞추기)
-        if (isTurning && pending != null)
+        switch (state)
         {
-            FaceTo(pendingAimPoint, pending.turnSpeedDegPerSec);
-
-            float angle = YawAngleTo(pendingAimPoint);
-            if (angle <= pending.facingToleranceDeg)
-            {
-                var slot = pendingSlot;
-                var def = pending;
-
-                isTurning = false;
-                pending = null;
-
-                // 선회 완료 후: 차징 스킬이면 차징 시작, 아니면 즉시 시전
-                if (def.isChargeSkill)
-                    StartChargeNow(slot, def);
-                else
-                    StartCastNow(slot, def);
-            }
-            return;
-        }
-
-        // ✅ 차징 중이면 시간 체크
-        if (isCharging && current != null && current.isChargeSkill)
-        {
-            float elapsed = Time.time - chargeStartTime;
-
-            // 차징 중에도 계속 조준점으로 회전하고 싶으면 켜세요(원치 않으면 주석)
-            if (current.requireFacing)
-                FaceTo(chargeAimPoint, current.turnSpeedDegPerSec);
-
-            if (current.autoReleaseOnMax && elapsed >= Mathf.Max(0.01f, current.maxChargeTime))
-            {
-                ReleaseCharge(); // 최대 시간 자동 발동
+            case State.Turning:
+                TickTurning();
                 return;
-            }
 
-            // 차징 중에는 기존 로직 Tick은 원하면 호출/아니면 끄기
-            // (원래 로직이 “시전 중”을 전제하면 오작동할 수 있으니 기본은 호출 안 하는 걸 추천)
-            return;
+            case State.Charging:
+                TickCharging();
+                return;
+
+            case State.Casting:
+                if (current && current.logic)
+                    current.logic.OnTick(this, current, Time.deltaTime);
+                return;
+
+            default:
+                return;
         }
-
-        // 캐스팅 중 로직 Tick (차징 중에는 위에서 return 처리)
-        if (current && current.logic)
-            current.logic.OnTick(this, current, Time.deltaTime);
     }
 
+    // =========================================================
+    // Input API
+    // =========================================================
     public void SetAimPoint(bool has, Vector3 worldPoint)
     {
         hasAimPoint = has;
         aimPoint = worldPoint;
     }
 
-    // =========================================================
-    // 입력용 API (중요)
-    // =========================================================
+    public Vector3 GetMouseGroundPoint()
+    {
+        if (hasAimPoint) return aimPoint;
+        return transform.position + transform.forward * 2f;
+    }
 
-    // ✅ 키 다운: 일반 스킬은 즉시 시전, 차징 스킬은 차징 시작
     public bool TryPress(SkillSlot slot)
     {
-        if (IsCasting || isTurning) return false;
+        // 상태가 Idle이 아닐 때는 새 스킬 시작 금지 (단순하게 유지)
+        if (state != State.Idle) return false;
 
-        if (!map.TryGetValue(slot, out var def)) return false;
-        if (!def.logic) return false;
+        if (!map.TryGetValue(slot, out var def) || def == null || def.logic == null)
+            return false;
 
-        // 차징 시작은 쿨타임을 "발동 시점"에 체크하는 게 일반적이라서,
-        // 여기서는 쿨타임 체크를 "Release"에서 합니다.
-        // 다만 눌렀는데 쿨이면 차징 모션조차 안 되게 하고 싶으면 아래 체크를 활성화하세요.
-        // if (Time.time < cdEnd[slot]) return false;
+        // 쿨타임 체크: 차지든 일반이든 "시작 자체"를 막음
+        if (Time.time < cdEnd[slot]) return false;
 
         pendingAimPoint = GetMouseGroundPoint();
 
+        // 선회 필요하면 Turning으로 들어감
         if (def.requireFacing)
         {
             float angle = YawAngleTo(pendingAimPoint);
             if (angle > def.facingToleranceDeg)
             {
-                StartTurning(slot, def);
+                BeginTurning(slot, def, pendingAimPoint);
                 return true;
             }
         }
 
-        if (def.isChargeSkill)
+        // 바로 실행
+        if (def.isChargeSkill) BeginCharge(slot, def, pendingAimPoint, releaseImmediately: false);
+        else BeginCast(slot, def);
+
+        return true;
+    }
+
+    public bool TryRelease(SkillSlot slot)
+    {
+        // 차지 중이면 즉시 릴리즈
+        if (state == State.Charging && current != null && current.isChargeSkill && currentSlot == slot)
         {
-            StartChargeNow(slot, def);
+            EndChargeAndFire();
             return true;
         }
 
-        // 일반 스킬
-        if (Time.time < cdEnd[slot]) return false;
-        StartCastNow(slot, def);
-        return true;
+        // Turning 중(아직 차지 시작 전) Up이 들어오면 "차지 시작하자마자 즉시 릴리즈" 예약
+        if (state == State.Turning && pending != null && pending.isChargeSkill && pendingSlot == slot)
+        {
+            pendingReleaseOnStart = true;
+            return true;
+        }
+
+        return false;
     }
-
-    // ✅ 키 업: 차징 스킬이면 공격 발동
-    public bool TryRelease(SkillSlot slot)
-    {
-        if (!isCharging) return false;
-        if (current == null) return false;
-        if (!current.isChargeSkill) return false;
-        if (chargingSlot != slot) return false;
-
-        ReleaseCharge();
-        return true;
-    }
-
-    // 기존 코드 호환용 (기존에 TryCast만 쓰던 부분이 있으면 유지)
-    public bool TryCast(SkillSlot slot) => TryPress(slot);
 
     // =========================================================
-
-    private void StartTurning(SkillSlot slot, SkillDefinition def)
+    // Turning
+    // =========================================================
+    private void BeginTurning(SkillSlot slot, SkillDefinition def, Vector3 aim)
     {
         pendingSlot = slot;
         pending = def;
-        isTurning = true;
+        pendingAimPoint = aim;
+        pendingReleaseOnStart = false;
+
+        state = State.Turning;
 
         if (def.lockMovementWhileTurning)
-            CancelMove();
+            StopAgentImmediate();
+    }
+
+    private void TickTurning()
+    {
+        if (pending == null)
+        {
+            state = State.Idle;
+            return;
+        }
+
+        FaceTo(pendingAimPoint, pending.turnSpeedDegPerSec);
+
+        float angle = YawAngleTo(pendingAimPoint);
+        if (angle > pending.facingToleranceDeg) return;
+
+        // 선회 완료 → 실제 시작
+        var slot = pendingSlot;
+        var def = pending;
+        var aim = pendingAimPoint;
+        bool releaseNow = pendingReleaseOnStart;
+
+        pending = null;
+        pendingReleaseOnStart = false;
+
+        if (def.isChargeSkill) BeginCharge(slot, def, aim, releaseImmediately: releaseNow);
+        else BeginCast(slot, def);
     }
 
     // =========================================================
-    // 차징 시작
+    // Charge
     // =========================================================
-    private void StartChargeNow(SkillSlot slot, SkillDefinition def)
+    private void BeginCharge(SkillSlot slot, SkillDefinition def, Vector3 aim, bool releaseImmediately)
     {
-        CancelMove();
-
-        // 새 캐스트 시작 시 이동 상태 초기화
         StopCastMoveIfRunning();
         castMoveStartedThisCast = false;
         castMoveLock = false;
 
-        // 차징 상태 세팅
         current = def;
-        isCharging = true;
-        chargingSlot = slot;
+        currentSlot = slot;
+
+        state = State.Charging;
+
+        chargeAimPoint = aim;
         chargeStartTime = Time.time;
+        charge01 = 0f;
+        releasedCharge01 = 0f;
 
-        // 차징 시작 시점 조준점 고정(원하면 고정 안 하고 매 프레임 GetMouseGroundPoint() 쓰게 바꿔도 됨)
-        chargeAimPoint = pendingAimPoint;
+        if (def.lockMovement)
+            StopAgentImmediate();
 
-        // 이동 잠금(차징 대기중 못 움직이게 하고 싶으면 def.lockMovement 사용)
-        if (def.lockMovement && agent)
-        {
-            agent.isStopped = true;
-            agent.velocity = Vector3.zero;
-        }
-
-        // 로직 훅: 차징 시작에 로직을 타게 하고 싶으면 여기서 호출
-        // 현재 SkillLogic에 전용 훅이 없으니, 필요하면 SkillLogic에 OnChargeStart/OnChargeRelease 추가하는 걸 추천.
-        // def.logic.OnStart(this, def);
-
-        // 차징 애니 트리거
+        // 차지 "시작" 애니
         if (!string.IsNullOrEmpty(def.chargeStartTrigger))
         {
             animator.ResetTrigger(def.chargeStartTrigger);
             animator.SetTrigger(def.chargeStartTrigger);
         }
 
-        // 무기 포즈 오버라이드가 “차징 시작”에도 적용되게 하고 싶으면
+        // 차지 시작 시 무기 포즈 적용(설정에 따라)
         if (weaponEquipper && def.overrideWeaponPose && def.weaponPoseApplyTiming == VfxTiming.OnStart)
             weaponEquipper.ApplyWeaponOffset(def.weaponLocalPosOffset, def.weaponLocalEulerOffset);
 
-        // VFX를 차징 시작에 뿌리고 싶으면(현재는 OnStart 이벤트에서만 뿌리게 돼 있으니 여기서 뿌릴 수도 있음)
-        // PlayVfx(def, VfxTiming.OnStart);
+        // Down/Up 같은 프레임이면 즉시 발동(차지값 0으로)
+        if (releaseImmediately)
+        {
+            EndChargeAndFire();
+        }
     }
 
-    // 차징 해제(공격 발동)
-    private void ReleaseCharge()
+    private void TickCharging()
     {
-        if (current == null) return;
+        if (current == null)
+        {
+            state = State.Idle;
+            return;
+        }
+
+        float maxT = Mathf.Max(0.01f, current.maxChargeTime);
+        float raw = Mathf.Clamp01((Time.time - chargeStartTime) / maxT);
+
+        if (current.chargeScale != null && current.chargeScale.curve != null)
+            charge01 = Mathf.Clamp01(current.chargeScale.curve.Evaluate(raw));
+        else
+            charge01 = raw;
+
+        if (current.requireFacing)
+            FaceTo(chargeAimPoint, current.turnSpeedDegPerSec);
+
+        if (current.autoReleaseOnMax && raw >= 1f)
+            EndChargeAndFire();
+    }
+
+    private void EndChargeAndFire()
+    {
+        if (current == null) { state = State.Idle; return; }
 
         var def = current;
-        var slot = chargingSlot;
+        var slot = currentSlot;
 
-        // 차징 종료는 무조건
-        isCharging = false;
+        // 차지 시작 트리거는 끊어줌
+        if (!string.IsNullOrEmpty(def.chargeStartTrigger))
+            animator.ResetTrigger(def.chargeStartTrigger);
 
-        // 쿨이면 "발동은 안 하지만" 상태는 풀어야 함
+        // Release 시점 차지값 고정
+        releasedCharge01 = charge01;
+
+        // 쿨타임(혹시나) 방어: 발동만 막고 상태는 정리
         if (Time.time < cdEnd[slot])
         {
-            ForceEndChargeState(def); // ✅ 추가
+            ResetToIdle(def);
             return;
         }
 
         cdEnd[slot] = Time.time + def.cooldown;
 
+        // 발동 로직 시작
+        state = State.Casting;
         def.logic.OnStart(this, def);
 
         if (!string.IsNullOrEmpty(def.animatorTrigger))
@@ -266,33 +312,28 @@ public class SkillRunner : MonoBehaviour
             animator.ResetTrigger(def.animatorTrigger);
             animator.SetTrigger(def.animatorTrigger);
         }
-    }
-    private void ForceEndChargeState(SkillDefinition def)
-    { 
-        if (agent)
+        else
         {
-            agent.isStopped = false;
-            agent.ResetPath();       // ✅ 추가: 남은 경로 제거
-            agent.velocity = Vector3.zero; // ✅ 추가: 잔속도 제거
+            // 발동 애니 트리거가 없으면 End 이벤트도 안 올 수 있으니 즉시 정리
+            ResetToIdle(def);
         }
-
-        if (weaponEquipper && def != null && def.overrideWeaponPose)
-            weaponEquipper.ResetWeaponOffset();
-
-        current = null;
-        isCharging = false;          // ✅ 안전하게 다시 한 번
     }
 
     // =========================================================
-    // 일반 스킬 시작
+    // Normal cast
     // =========================================================
-    private void StartCastNow(SkillSlot slot, SkillDefinition def)
+    private void BeginCast(SkillSlot slot, SkillDefinition def)
     {
-        CancelMove();
-
         StopCastMoveIfRunning();
         castMoveStartedThisCast = false;
         castMoveLock = false;
+
+        current = def;
+        currentSlot = slot;
+        state = State.Casting;
+
+        releasedCharge01 = 0f;
+        charge01 = 0f;
 
         cdEnd[slot] = Time.time + def.cooldown;
 
@@ -300,13 +341,8 @@ public class SkillRunner : MonoBehaviour
             def.lockMovement ||
             (def.castMove != null && def.castMove.blockNormalMove);
 
-        if (shouldStopAgent && agent)
-        {
-            agent.isStopped = true;
-            agent.velocity = Vector3.zero;
-        }
-
-        current = def;
+        if (shouldStopAgent)
+            StopAgentImmediate();
 
         def.logic.OnStart(this, def);
 
@@ -316,43 +352,33 @@ public class SkillRunner : MonoBehaviour
             animator.SetTrigger(def.animatorTrigger);
         }
 
-        if (weaponEquipper && current.overrideWeaponPose)
-            weaponEquipper.ApplyWeaponOffset(current.weaponLocalPosOffset, current.weaponLocalEulerOffset);
-    }
-
-    private void CancelMove()
-    {
-        if (!agent) return;
-        agent.isStopped = true;
-        agent.ResetPath();
+        if (weaponEquipper && def.overrideWeaponPose)
+            weaponEquipper.ApplyWeaponOffset(def.weaponLocalPosOffset, def.weaponLocalEulerOffset);
     }
 
     // =========================================================
-    // Anim Events
+    // Anim Events (Animation Event에서 호출)
     // =========================================================
     public void AnimEvent_Start()
     {
+        if (state != State.Casting) return;
         if (current?.logic == null) return;
 
-        // 차징 모션에서도 이벤트가 날아올 수 있는데,
-        // 차징 중에는 공격 로직을 타면 안 되므로 막습니다.
-        if (isCharging && current.isChargeSkill) return;
-
         current.logic.OnAnimStart(this, current);
+        
         PlayVfx(current, VfxTiming.OnStart);
     }
 
     public void AnimEvent_Move()
     {
-        // 차징 중에는 이동 시작시키면 안 됨(원하면 차징 이동도 만들 수 있음)
-        if (isCharging && current != null && current.isChargeSkill) return;
+        if (state != State.Casting) return;
         TryStartCastMove(current);
     }
 
     public void AnimEvent_Hit()
     {
+        if (state != State.Casting) return;
         if (current?.logic == null) return;
-        if (isCharging && current.isChargeSkill) return;
 
         current.logic.OnAnimHit(this, current);
         PlayVfx(current, VfxTiming.OnHit);
@@ -360,26 +386,47 @@ public class SkillRunner : MonoBehaviour
 
     public void AnimEvent_End()
     {
+        if (state != State.Casting) return;
         if (current?.logic == null) return;
-
-        // 차징 모션의 End 이벤트가 날아오면(루프가 아니거나) 상태만 유지하면 되는데,
-        // 여기선 차징 모션은 End 이벤트를 안 쓰는 걸 전제로 합니다.
-        // 만약 차징 클립에 End 이벤트가 있다면 "차징 종료"로 오작동할 수 있으니 제거하세요.
-        if (isCharging && current.isChargeSkill) return;
 
         current.logic.OnAnimEnd(this, current);
         PlayVfx(current, VfxTiming.OnEnd);
 
+        ResetToIdle(current);
+    }
+
+    // =========================================================
+    // Reset / Movement
+    // =========================================================
+    private void ResetToIdle(SkillDefinition def)
+    {
         StopCastMoveIfRunning();
         castMoveStartedThisCast = false;
+        castMoveLock = false;
 
         if (agent)
+        {
             agent.isStopped = false;
+            agent.ResetPath();
+            agent.velocity = Vector3.zero;
+        }
 
-        if (weaponEquipper && current.overrideWeaponPose)
+        if (weaponEquipper && def != null && def.overrideWeaponPose)
             weaponEquipper.ResetWeaponOffset();
 
         current = null;
+        releasedCharge01 = 0f;
+        charge01 = 0f;
+
+        state = State.Idle;
+    }
+
+    private void StopAgentImmediate()
+    {
+        if (!agent) return;
+        agent.isStopped = true;
+        agent.ResetPath();
+        agent.velocity = Vector3.zero;
     }
 
     // =========================================================
@@ -423,7 +470,26 @@ public class SkillRunner : MonoBehaviour
                 return transform.forward;
         }
     }
+    public int GetCurrentDamage(SkillDefinition def)
+    {
+        if (def == null) return 0;
 
+        // 차지 데미지 사용 안 하면 고정 데미지
+        if (!def.useChargeDamage || !def.isChargeSkill)
+            return def.baseDamage;
+
+        float c01 = Mathf.Clamp01(CurrentCharge01);
+        return Mathf.RoundToInt(
+            Mathf.Lerp(def.minChargeDamage, def.maxChargeDamage, c01)
+        );
+    }
+    
+    private static float EvaluateDamageScale(SkillDefinition def, float c01)
+    {
+        if (def == null || def.chargeScale == null) return 1f;
+        return Mathf.Lerp(def.chargeScale.minDamageScale, def.chargeScale.maxDamageScale, Mathf.Clamp01(c01));
+    }
+    
     private IEnumerator Co_CastMove(CastMoveConfig cfg)
     {
         if (cfg == null || !agent) yield break;
@@ -438,7 +504,7 @@ public class SkillRunner : MonoBehaviour
         float t = 0f;
         float moved = 0f;
 
-        while (t < duration && moved < targetDist && current != null)
+        while (t < duration && moved < targetDist && state == State.Casting && current != null)
         {
             float dt = Time.deltaTime;
             t += dt;
@@ -456,7 +522,7 @@ public class SkillRunner : MonoBehaviour
             {
                 Vector3 origin = transform.position + Vector3.up * Mathf.Max(0.5f, agent.height * 0.5f);
                 float radius = Mathf.Max(0.1f, agent.radius * 0.9f);
-                if (Physics.SphereCast(origin, radius, dir, out var hit, step + 0.05f))
+                if (Physics.SphereCast(origin, radius, dir, out _, step + 0.05f))
                     break;
             }
 
@@ -471,14 +537,8 @@ public class SkillRunner : MonoBehaviour
     }
 
     // =========================================================
-    // Utils
+    // Facing / Utils
     // =========================================================
-    public Vector3 GetMouseGroundPoint()
-    {
-        if (hasAimPoint) return aimPoint;
-        return transform.position + transform.forward * 2f;
-    }
-
     public void FaceTo(Vector3 worldPoint, float maxDegPerSec = 99999f)
     {
         Vector3 dir = worldPoint - transform.position;
@@ -494,20 +554,35 @@ public class SkillRunner : MonoBehaviour
         Vector3 dir = worldPoint - transform.position;
         dir.y = 0f;
         if (dir.sqrMagnitude < 0.0001f) return 0f;
-
-        float angle = Vector3.Angle(transform.forward, dir.normalized);
-        return angle;
+        return Vector3.Angle(transform.forward, dir.normalized);
     }
 
     public NavMeshAgent Agent => agent;
     public Animator Animator => animator;
 
     // =========================================================
-    // VFX pooling (원본 그대로)
+    // Charge scale helpers
+    // =========================================================
+    private static float EvaluateVfxScale(SkillDefinition def, float c01)
+    {
+        if (def == null || def.chargeScale == null) return 1f;
+        return Mathf.Lerp(def.chargeScale.minVfxScale, def.chargeScale.maxVfxScale, Mathf.Clamp01(c01));
+    }
+
+    private static float EvaluateHitScale(SkillDefinition def, float c01)
+    {
+        if (def == null || def.chargeScale == null) return 1f;
+        return Mathf.Lerp(def.chargeScale.minHitScale, def.chargeScale.maxHitScale, Mathf.Clamp01(c01));
+    }
+
+    // =========================================================
+    // VFX pooling + Spawn 후 scale 적용(누적 방지)
     // =========================================================
     private void PlayVfx(SkillDefinition def, VfxTiming timing)
     {
         if (def == null || def.vfx == null) return;
+
+        float vfxScaleMul = EvaluateVfxScale(def, CurrentCharge01);
 
         for (int i = 0; i < def.vfx.Count; i++)
         {
@@ -544,6 +619,17 @@ public class SkillRunner : MonoBehaviour
                 inst.transform.SetParent(null);
             }
 
+            if (!prefabBaseScale.TryGetValue(v.prefab, out var baseScale))
+            {
+                baseScale = v.prefab.transform.localScale;
+                prefabBaseScale[v.prefab] = baseScale;
+            }
+
+            if (def.isChargeSkill && def.chargeScale != null)
+                inst.transform.localScale = baseScale * vfxScaleMul;
+            else
+                inst.transform.localScale = baseScale;
+
             float life = v.lifeTime;
             if (life <= 0f)
             {
@@ -561,13 +647,10 @@ public class SkillRunner : MonoBehaviour
         {
             case VfxAttach.PlayerRoot:
                 return transform;
-
             case VfxAttach.SwordTip:
                 return swordTip ? swordTip : transform;
-
             case VfxAttach.SwordBase:
                 return swordBase ? swordBase : transform;
-
             case VfxAttach.Custom:
                 if (string.IsNullOrEmpty(custom)) return transform;
                 if (socketCache.TryGetValue(custom, out var cached) && cached) return cached;
@@ -577,7 +660,6 @@ public class SkillRunner : MonoBehaviour
 
                 socketCache[custom] = found ? found : transform;
                 return socketCache[custom];
-
             case VfxAttach.None:
             default:
                 return null;
