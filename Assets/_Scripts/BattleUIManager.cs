@@ -1,17 +1,30 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class BattleUIManager : MonoBehaviour
 {
-    [SerializeField]
-    Image[] CDImgs; // 0~2: Skill CDs, 3~4: Spell CDs
-    Image UltGauge;
+    public GameObject BluePlayer;
+    HealthEX BluePlayerHealth;
+    public GameObject RedPlayer;
+    HealthEX RedPlayerHealth;
+    public Image BlueHPGauge;
+    public Image RedHPGauge;
+    public SkillDefinition[] SkillDefs; // 0~2: Skills, 3~4: Spells
+    public Image[] CDImgs; // 0~2: Skill CDs, 3~4: Spell CDs
+    public TextMeshProUGUI[] CDTexts;
+    public Image UltMask;
+    public Image UltGauge;
+    public TextMeshProUGUI UltText;
     float[] coolDowns;
     bool[] isOnCD;
 
 
     void Start()
     {
+        BluePlayerHealth = BluePlayer.GetComponentInChildren<HealthEX>();
+        RedPlayerHealth = RedPlayer.GetComponentInChildren<HealthEX>();
+
         coolDowns = new float[CDImgs.Length];
         isOnCD = new bool[CDImgs.Length];
         UltGauge.fillAmount = 1f;
@@ -19,11 +32,12 @@ public class BattleUIManager : MonoBehaviour
         for (int i = 0; i < CDImgs.Length; i++)
         {
             CDImgs[i].fillAmount = 0f;
+            CDTexts[i].text = "";
             isOnCD[i] = false;
         }
     }
 
-    public void StartCooldown(char skill, float cooldown)
+    public void StartCooldown(char skill)
     {
         switch (skill)
         {
@@ -31,7 +45,7 @@ public class BattleUIManager : MonoBehaviour
             case 'q':
                 if (!isOnCD[0])
                 {
-                    coolDowns[0] = cooldown;
+                    coolDowns[0] = SkillDefs[0].cooldown;
                     CDImgs[0].fillAmount = 1f;
                     isOnCD[0] = true;
                 }
@@ -40,7 +54,7 @@ public class BattleUIManager : MonoBehaviour
             case 'w':
                 if (!isOnCD[1])
                 {
-                    coolDowns[1] = cooldown;
+                    coolDowns[1] = SkillDefs[1].cooldown;
                     CDImgs[1].fillAmount = 1f;
                     isOnCD[1] = true;
                 }
@@ -50,7 +64,7 @@ public class BattleUIManager : MonoBehaviour
             case 'e':
                 if (!isOnCD[2])
                 {
-                    coolDowns[2] = cooldown;
+                    coolDowns[2] = SkillDefs[2].cooldown;
                     CDImgs[2].fillAmount = 1f;
                     isOnCD[2] = true;
                 }
@@ -78,26 +92,38 @@ public class BattleUIManager : MonoBehaviour
 
     public void ChargeUlt(float amount)
     {
-        UltGauge.fillAmount -= amount / 100f;
-
+        if (UltGauge.fillAmount > 0)
+            UltGauge.fillAmount -= amount / 100f;
+        
+        if (UltGauge.fillAmount <= 0)
+        {
+            UltMask.enabled = false;
+            UltText.text = "";
+        }
+        else UltText.text = Mathf.FloorToInt((1-UltGauge.fillAmount) * 100f).ToString() + "%";
     }
 
     // Update is called once per frame
     void Update()
     {
+        BlueHPGauge.fillAmount = BluePlayerHealth.hp / 100f;
+        RedHPGauge.fillAmount = RedPlayerHealth.hp / 100f;
+
         for (int i = 0; i < CDImgs.Length; i++)
         {
             if (isOnCD[i])
             {
-                CDImgs[i].fillAmount -= Time.deltaTime / coolDowns[i];
+                CDImgs[i].fillAmount -= Time.deltaTime / SkillDefs[i].cooldown;
+                coolDowns[i] -= Time.deltaTime;
+                CDTexts[i].text = Mathf.CeilToInt(coolDowns[i]).ToString();
 
-                if (CDImgs[i].fillAmount <= 0f)
+                if (coolDowns[i] <= 0f)
                 {
+                    CDImgs[i].fillAmount = 0f;
                     isOnCD[i] = false;
+                    CDTexts[i].text = "";
                 }
             }
         }
-
-        StartCooldown('Q', 6f);
     }
 }

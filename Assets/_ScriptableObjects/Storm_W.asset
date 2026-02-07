@@ -14,9 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   slot: 2
   cooldown: 2
+  baseDamage: 10
+  useChargeDamage: 0
+  minChargeDamage: 10
+  maxChargeDamage: 30
   animatorTrigger: Skill_W
   lockMovement: 1
-  logic: {fileID: 11400000, guid: 7cf62c4530bdd2b4b90e68df3338b656, type: 2}
+  logic: {fileID: 11400000, guid: 41c1aef49fdb28f488b9907ef039358e, type: 2}
   requireFacing: 1
   turnSpeedDegPerSec: 1500
   facingToleranceDeg: 6
@@ -25,6 +29,42 @@ MonoBehaviour:
   weaponLocalPosOffset: {x: 0, y: 0, z: 0}
   weaponLocalEulerOffset: {x: 0, y: 0, z: 0}
   weaponPoseApplyTiming: 0
+  castMove: {fileID: 0}
+  isChargeSkill: 0
+  chargeStartTrigger: 
+  maxChargeTime: 3
+  autoReleaseOnMax: 1
+  chargeScale:
+    minVfxScale: 1
+    maxVfxScale: 2.5
+    minHitScale: 1
+    maxHitScale: 2
+    curve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 1
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    minDamageScale: 1
+    maxDamageScale: 1
   vfx:
   - timing: 0
     prefab: {fileID: 5238538877814813142, guid: 47096eff328e11a418ace7db2d72aa97,

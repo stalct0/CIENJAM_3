@@ -14,5 +14,5 @@ public abstract class SkillLogic : ScriptableObject
     // 애니메이션 이벤트(End 타이밍)에서 호출
     public virtual void OnAnimEnd(SkillRunner runner, SkillDefinition def) { }
     public virtual void OnAnimStart(SkillRunner runner, SkillDefinition def) {}
-
+    public virtual void OnCustomEvent(SkillRunner runner, SkillDefinition def, string evt) { }
 }

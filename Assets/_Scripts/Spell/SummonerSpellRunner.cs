@@ -37,7 +37,6 @@ public class SummonerSpellRunner : MonoBehaviour
         cdEnd[SummonerSlot.F] = 0f;
     }
 
-    // ✅ 입력(Update) 제거. InputHandler가 TryCast 호출.
     public void SetAimPoint(bool has, Vector3 p)
     {
         hasAimPoint = has;
@@ -76,6 +75,8 @@ public class SummonerSpellRunner : MonoBehaviour
     // =========================
     private bool CastFlash(SummonerSpellDefinition def)
     {
+        Debug.Log($"[Flash] hasAim={hasAimPoint} aim={aimWorldPoint}");
+
         if (!hasAimPoint) return false;
 
         Vector3 p = aimWorldPoint;
@@ -89,21 +90,24 @@ public class SummonerSpellRunner : MonoBehaviour
         Vector3 delta = to - from;
         delta.y = 0f;
 
+        Debug.Log($"[Flash] from={from} to={to} dist={delta.magnitude} maxRange={maxRange}");
+
         if (delta.sqrMagnitude < 0.01f) return false;
 
-        float dist = delta.magnitude;
-        if (dist > maxRange)
+        if (delta.magnitude > maxRange)
             to = from + delta.normalized * maxRange;
 
-        var agent = GetComponent<NavMeshAgent>();
+        var agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
         if (agent)
         {
-            agent.Warp(to);
+            bool ok = agent.Warp(to);
             agent.ResetPath();
+            Debug.Log($"[Flash] Warp ok={ok} finalPos={transform.position}");
         }
         else
         {
             transform.position = to;
+            Debug.Log($"[Flash] SetPos finalPos={transform.position}");
         }
 
         return true;

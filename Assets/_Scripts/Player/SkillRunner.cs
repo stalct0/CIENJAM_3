@@ -239,6 +239,10 @@ public class SkillRunner : MonoBehaviour
         if (def.lockMovement)
             StopAgentImmediate();
 
+        var defense = GetComponent<DefenseController>();
+        if (defense && def.slot == SkillSlot.R)
+            defense.externalKnockbackImmune = true;
+        
         // 차지 "시작" 애니
         if (!string.IsNullOrEmpty(def.chargeStartTrigger))
         {
@@ -286,7 +290,11 @@ public class SkillRunner : MonoBehaviour
 
         var def = current;
         var slot = currentSlot;
-
+        
+        var defense = GetComponent<DefenseController>();
+        if (defense && def.slot == SkillSlot.R)
+            defense.externalKnockbackImmune = false;
+        
         // 차지 시작 트리거는 끊어줌
         if (!string.IsNullOrEmpty(def.chargeStartTrigger))
             animator.ResetTrigger(def.chargeStartTrigger);
@@ -374,6 +382,21 @@ public class SkillRunner : MonoBehaviour
         if (state != State.Casting) return;
         TryStartCastMove(current);
     }
+    public void AnimEvent_GuardStart()
+    {
+        if (state != State.Casting) return;
+        if (current?.logic == null) return;
+
+        current.logic.OnCustomEvent(this, current, "GuardStart");
+    }
+    public void AnimEvent_GuardEnd()
+    {
+        if (state != State.Casting) return;
+        if (current?.logic == null) return;
+
+        // W 전용 로직이 이 이벤트를 받도록(캐스팅 타입 체크는 로직에서)
+        current.logic.OnCustomEvent(this, current, "GuardEnd");
+    }
 
     public void AnimEvent_Hit()
     {
@@ -403,6 +426,9 @@ public class SkillRunner : MonoBehaviour
         StopCastMoveIfRunning();
         castMoveStartedThisCast = false;
         castMoveLock = false;
+        
+        var defense = GetComponent<DefenseController>();
+        if (defense) defense.externalKnockbackImmune = false;
 
         if (agent)
         {

@@ -97,7 +97,9 @@ public class PlayerInputHandler : MonoBehaviour
     {
         if (skillRunner != null)
             skillRunner.SetAimPoint(inputState.hasAimPoint, inputState.aimWorldPoint);
-
+        if (summoner != null)
+            summoner.SetAimPoint(inputState.hasAimPoint, inputState.aimWorldPoint);
+        
         // 이동 클릭은 Busy면 막음
         if (mover != null && inputState.moveClick && inputState.hasAimPoint)
         {

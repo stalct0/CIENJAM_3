@@ -130,7 +130,8 @@ public class MeleeAttackLogic : SkillLogic
             // ==============================
             // Final Damage (charge scaled)
             // ==============================
-            int finalDamage = Mathf.RoundToInt(damage * damageScale);
+            int baseDmg = runner.GetCurrentDamage(def); // def.useChargeDamage면 min~max로 계산됨
+            int finalDamage = Mathf.RoundToInt(baseDmg * damageScale);
             CombatIdentity attackerId = runner.GetComponentInParent<CombatIdentity>();
             if (attackerId == null) attackerId = runner.GetComponentInChildren<CombatIdentity>();
             
@@ -144,7 +145,14 @@ public class MeleeAttackLogic : SkillLogic
                 amount = finalDamage,
                 hitPoint = col.ClosestPoint(origin),
                 hitDir = to.normalized,
-                skill = def
+                skill = def,
+                
+                // ✅ R은 가드 절반 관통
+                guardBypass = (def != null && def.slot == SkillSlot.R) ? GuardBypassType.PartialBypass : GuardBypassType.None,
+                guardBypassFactor = 0.5f,
+
+                // (선택) 스킬별 넉백이 있으면 여기 설정
+                hasKnockback = false,
             };
 
             target.TakeDamage(info);
