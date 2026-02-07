@@ -135,7 +135,17 @@ public class SkillRunner : MonoBehaviour
 
         // 쿨타임 체크: 차지든 일반이든 "시작 자체"를 막음
         if (Time.time < cdEnd[slot]) return false;
+        
+        if (slot == SkillSlot.R)
+        {
+            var ult = GetComponentInParent<UltGauge>();
+            if (ult == null) ult = GetComponent<UltGauge>();
 
+            if (ult == null || !ult.IsFull)
+                return false; // 100% 아니면 R 못 씀
+            
+        }
+        
         pendingAimPoint = GetMouseGroundPoint();
 
         // 선회 필요하면 Turning으로 들어감
@@ -291,6 +301,17 @@ public class SkillRunner : MonoBehaviour
         var def = current;
         var slot = currentSlot;
         
+        if (slot == SkillSlot.R)
+        {
+            var ult = GetComponentInParent<UltGauge>();
+            if (ult == null) ult = GetComponent<UltGauge>();
+            if (ult == null || !ult.TryConsumeFull())
+            {
+                ResetToIdle(def);
+                return;
+            }
+        }
+        
         var defense = GetComponent<DefenseController>();
         if (defense && def.slot == SkillSlot.R)
             defense.externalKnockbackImmune = false;
@@ -352,6 +373,14 @@ public class SkillRunner : MonoBehaviour
         if (shouldStopAgent)
             StopAgentImmediate();
 
+        if (slot == SkillSlot.R)
+        {
+            var ult = GetComponentInParent<UltGauge>();
+            if (ult == null) ult = GetComponent<UltGauge>();
+            if (ult == null || !ult.TryConsumeFull())
+                return; // 가득 아니면 발동 취소
+        }
+        
         def.logic.OnStart(this, def);
 
         if (!string.IsNullOrEmpty(def.animatorTrigger))

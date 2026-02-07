@@ -148,8 +148,8 @@ public class MeleeAttackLogic : SkillLogic
                 skill = def,
                 
                 // ✅ R은 가드 절반 관통
-                guardBypass = (def != null && def.slot == SkillSlot.R) ? GuardBypassType.PartialBypass : GuardBypassType.None,
-                guardBypassFactor = 0.5f,
+                guardBypass = def != null ? def.guardBypass : GuardBypassType.None,
+                guardBypassFactor = def != null ? def.guardBypassFactor : 1f,
 
                 // (선택) 스킬별 넉백이 있으면 여기 설정
                 hasKnockback = false,

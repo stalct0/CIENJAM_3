@@ -1712,6 +1712,7 @@ GameObject:
   - component: {fileID: 2165223636672497450}
   - component: {fileID: 7969266578487608626}
   - component: {fileID: 5941733949893345456}
+  - component: {fileID: 5275770540742136581}
   m_Layer: 6
   m_Name: Storm
   m_TagString: Untagged
@@ -1840,7 +1841,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4932414756607366036}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a884072f96379d74f8dddd7cd2fea4c1, type: 3}
   m_Name: 
@@ -1865,7 +1866,7 @@ MonoBehaviour:
   mover: {fileID: 5894739524526931734}
   skillRunner: {fileID: 2467273136986853341}
   knockback: {fileID: 5944921730592603784}
-  summoner: {fileID: 0}
+  summoner: {fileID: 5941733949893345456}
 --- !u!114 &2467273136986853341
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1951,9 +1952,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5d78cc72aa93d341b489eb6181ba37f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ownerId: 2
-  entityId: 2
-  team: 2
+  ownerId: 1
+  entityId: 1
+  team: 1
 --- !u!136 &7969266578487608626
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1999,8 +2000,24 @@ MonoBehaviour:
   exhaustRange: 4
   exhaustTargetMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64
   flashDistance: 5
+--- !u!114 &5275770540742136581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4932414756607366036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da16563548d25f8418c709cd401805c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  guardActive: 0
+  guardHalfAngle: 60
+  knockbackImmuneWhileGuard: 1
+  externalKnockbackImmune: 0
 --- !u!1 &4960500615755703903
 GameObject:
   m_ObjectHideFlags: 0

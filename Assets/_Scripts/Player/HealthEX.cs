@@ -4,7 +4,8 @@ public class HealthEX : MonoBehaviour, IDamageable
 {
     [Header("HP")]
     public int hp = 100;
-
+    public int maxHp = 100;
+    
     [Header("Invincibility")]
     public float invincibleTime = 0.0f;
     private float invUntil;
@@ -31,8 +32,11 @@ public class HealthEX : MonoBehaviour, IDamageable
     {
         if (Time.time < invUntil) return;
         int dmg = info.amount;
+        int prevHp = hp;
         
         var defense = GetComponent<DefenseController>();
+        Debug.Log($"[TAKE] {name} guardActive={(defense ? defense.guardActive : false)} attacker={(info.attacker ? info.attacker.name : "null")} raw={info.amount}");
+
         if (defense && defense.guardActive && info.attacker != null)
         {
             bool fromFront = defense.IsAttackFromFront(info.attacker.transform.position);
@@ -52,7 +56,10 @@ public class HealthEX : MonoBehaviour, IDamageable
                     // 그대로
                 }
             }
+            Debug.Log($"[GUARD TEST] guardActive={defense.guardActive} fromFront={fromFront} " +
+                      $"ang={Vector3.Angle(defense.transform.forward, (info.attacker.transform.position - defense.transform.position).normalized)}");
         }
+        
         // 공격자가 탈진 상태면 피해 감소
         if (info.attacker != null)
         {
@@ -136,6 +143,16 @@ public class HealthEX : MonoBehaviour, IDamageable
                 : lockInputDuringKnockback;
             
             kb.ApplyKnockback(from, knockbackDistance, knockbackDuration, lockInputDuringKnockback);
+            int lost = Mathf.Max(0, prevHp - hp);
+            if (lost > 0 && maxHp > 0)
+            {
+                float lostPercent = (lost / (float)maxHp) * 100f;   // 잃은 체력 %
+                float gain = lostPercent * 1.5f;                    // 1%당 1.5%
+
+                var ult = GetComponentInParent<UltGauge>();
+                if (ult == null) ult = GetComponent<UltGauge>();
+                if (ult != null) ult.AddPercent(gain);
+            }
         }
 
         Debug.Log($"{name} took {info.amount} from {(info.attacker ? info.attacker.name : "NULL")}. HP={hp}");

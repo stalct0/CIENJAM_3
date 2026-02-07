@@ -28,6 +28,7 @@ public class WGuardAndAttackLogic : SkillLogic
     public override void OnCustomEvent(SkillRunner runner, SkillDefinition def, string evt)
     {
         // 가드 시작
+        Debug.Log("[W] OnCustomEvent " + evt + " on " + runner.name);
         var defense = runner.GetComponent<DefenseController>();
         if (!defense) return;
         

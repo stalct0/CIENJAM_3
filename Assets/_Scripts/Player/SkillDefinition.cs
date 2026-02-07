@@ -48,6 +48,12 @@ public class SkillDefinition : ScriptableObject
     [Header("Damage")]
     public int baseDamage = 10;   // 일반 스킬용
 
+    [Header("Guard Bypass")]
+    public GuardBypassType guardBypass = GuardBypassType.None;
+
+    [Range(0f, 1f)]
+    public float guardBypassFactor = 0.5f; // Partial일 때만 사용
+    
     [Header("Charge Damage (Charge Skill Only)")]
     public bool useChargeDamage = false;
     public int minChargeDamage = 10;
