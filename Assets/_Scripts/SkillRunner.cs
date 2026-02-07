@@ -14,30 +14,39 @@ public class SkillRunner : MonoBehaviour
 
     private readonly Dictionary<SkillSlot, SkillDefinition> map = new();
     private readonly Dictionary<SkillSlot, float> cdEnd = new();
-    
+
     [Header("Raycast")]
     [SerializeField] private Camera cam;
     [SerializeField] private LayerMask groundMask; // 바닥 레이어로 지정
-    
+
     [Header("VFX sockets")]
     public Transform swordTip;
     public Transform swordBase;
-    
+
     private bool hasAimPoint;
     private Vector3 aimPoint;
-    
-    private SkillDefinition current;    
+
+    private SkillDefinition current;
     private SkillDefinition pending;
     private SkillSlot pendingSlot;
     private bool isTurning;
     private Vector3 pendingAimPoint;
-    public WeaponEquipper weaponEquipper; 
-    
+
+    public WeaponEquipper weaponEquipper;
+
     // === Simple VFX pooling ===
     private readonly Dictionary<GameObject, Queue<GameObject>> pool = new();
     private readonly Dictionary<string, Transform> socketCache = new();
+
     public bool IsCasting => current != null;
-    
+
+    // ===== Cast-Move Runtime State =====
+    private Coroutine castMoveCo;
+    private bool castMoveLock;          // "시전 이동/잠금" 중인지
+    private bool castMoveStartedThisCast;
+
+    public bool CastMoveLock => castMoveLock;
+
     private void Awake()
     {
         if (!animator) animator = GetComponentInChildren<Animator>();
@@ -56,13 +65,11 @@ public class SkillRunner : MonoBehaviour
     {
         if (isTurning && pending != null)
         {
-            // 선회 중에는 고정된 aimPoint로 회전
             FaceTo(pendingAimPoint, pending.turnSpeedDegPerSec);
 
             float angle = YawAngleTo(pendingAimPoint);
             if (angle <= pending.facingToleranceDeg)
             {
-                // 선회 완료 -> 실제 캐스트 시작
                 var slot = pendingSlot;
                 var def = pending;
 
@@ -71,14 +78,13 @@ public class SkillRunner : MonoBehaviour
 
                 StartCastNow(slot, def);
             }
-            return; 
+            return;
         }
 
-        // 캐스팅 중 로직 Tick
         if (current && current.logic)
             current.logic.OnTick(this, current, Time.deltaTime);
     }
-    
+
     public void SetAimPoint(bool has, Vector3 worldPoint)
     {
         hasAimPoint = has;
@@ -91,8 +97,9 @@ public class SkillRunner : MonoBehaviour
         if (!map.TryGetValue(slot, out var def)) return false;
         if (!def.logic) return false;
         if (Time.time < cdEnd[slot]) return false;
+
         pendingAimPoint = GetMouseGroundPoint();
-        
+
         if (def.requireFacing)
         {
             float angle = YawAngleTo(pendingAimPoint);
@@ -101,7 +108,6 @@ public class SkillRunner : MonoBehaviour
                 StartTurning(slot, def);
                 return true;
             }
-            // 이미 거의 정면이면 바로 캐스트
         }
 
         StartCastNow(slot, def);
@@ -115,23 +121,34 @@ public class SkillRunner : MonoBehaviour
         isTurning = true;
 
         if (def.lockMovementWhileTurning)
-            CancelMove(); // agent.ResetPath 포함
+            CancelMove();
     }
 
     private void StartCastNow(SkillSlot slot, SkillDefinition def)
     {
         CancelMove();
 
+        // 새 캐스트 시작 시 이동 상태 초기화
+        StopCastMoveIfRunning();
+        castMoveStartedThisCast = false;
+        castMoveLock = false;
+
         cdEnd[slot] = Time.time + def.cooldown;
 
-        if (def.lockMovement && agent)
+        // 기본적으로 lockMovement면 경로 이동 막음
+        // castMove.blockNormalMove도 똑같이 경로 이동을 막는 의미라서 같이 반영
+        bool shouldStopAgent =
+            def.lockMovement ||
+            (def.castMove != null && def.castMove.blockNormalMove);
+
+        if (shouldStopAgent && agent)
         {
             agent.isStopped = true;
             agent.velocity = Vector3.zero;
         }
 
         current = def;
-        
+
         def.logic.OnStart(this, def);
 
         if (!string.IsNullOrEmpty(def.animatorTrigger))
@@ -139,27 +156,36 @@ public class SkillRunner : MonoBehaviour
             animator.ResetTrigger(def.animatorTrigger);
             animator.SetTrigger(def.animatorTrigger);
         }
+
         if (weaponEquipper && current.overrideWeaponPose)
             weaponEquipper.ApplyWeaponOffset(current.weaponLocalPosOffset, current.weaponLocalEulerOffset);
     }
-    
+
     private void CancelMove()
     {
         if (!agent) return;
 
         agent.isStopped = true;
-        agent.ResetPath(); 
+        agent.ResetPath();
     }
+
     public void AnimEvent_Start()
     {
         if (current?.logic == null) return;
-        current.logic.OnAnimStart(this, current);   // 새 훅
+
+        current.logic.OnAnimStart(this, current);
         PlayVfx(current, VfxTiming.OnStart);
     }
-    
+
+    public void AnimEvent_Move()
+    {
+        TryStartCastMove(current);
+    }
+
     public void AnimEvent_Hit()
     {
         if (current?.logic == null) return;
+
         current.logic.OnAnimHit(this, current);
         PlayVfx(current, VfxTiming.OnHit);
     }
@@ -167,15 +193,123 @@ public class SkillRunner : MonoBehaviour
     public void AnimEvent_End()
     {
         if (current?.logic == null) return;
+
         current.logic.OnAnimEnd(this, current);
         PlayVfx(current, VfxTiming.OnEnd);
+
+        // ✅ 시전 중 이동 종료/정리
+        StopCastMoveIfRunning();
+        castMoveStartedThisCast = false;
+
         // 이동 잠금 해제
-        if (current.lockMovement && agent)
+        // (lockMovement 또는 castMove.blockNormalMove로 막았던 이동을 풀어줌)
+        if (agent)
             agent.isStopped = false;
-        
+
         if (weaponEquipper && current.overrideWeaponPose)
             weaponEquipper.ResetWeaponOffset();
+
         current = null;
+    }
+
+    // ===== Cast Move =====
+
+    private void TryStartCastMove(SkillDefinition def)
+    {
+        if (def == null) return;
+        if (def.castMove == null) return;
+        if (castMoveStartedThisCast) return;
+
+        castMoveStartedThisCast = true;
+
+        // 코루틴 시작
+        castMoveCo = StartCoroutine(Co_CastMove(def.castMove));
+    }
+
+    private void StopCastMoveIfRunning()
+    {
+        if (castMoveCo != null)
+        {
+            StopCoroutine(castMoveCo);
+            castMoveCo = null;
+        }
+        castMoveLock = false;
+    }
+
+    private Vector3 ResolveMoveDir(CastMoveConfig cfg)
+    {
+        // NOTE:
+        // 지금 SkillRunner에는 "입력 월드방향"이 없어서,
+        // Input/TowardTarget은 임시로 "aimPoint(마우스 지점) 방향"으로 처리합니다.
+        // 나중에 PlayerInputHandler에서 MoveWorldDir을 받아오면 Input은 그걸로 바꾸세요.
+
+        switch (cfg.direction)
+        {
+            case SkillMoveDirection.Input:
+            case SkillMoveDirection.TowardTarget:
+            {
+                Vector3 p = GetMouseGroundPoint();
+                Vector3 dir = p - transform.position;
+                dir.y = 0f;
+                if (dir.sqrMagnitude < 0.0001f) return transform.forward;
+                return dir.normalized;
+            }
+            case SkillMoveDirection.Forward:
+            default:
+                return transform.forward;
+        }
+    }
+
+    private IEnumerator Co_CastMove(CastMoveConfig cfg)
+    {
+        if (cfg == null || !agent) yield break;
+
+        float duration = Mathf.Max(0.01f, cfg.duration);
+        float targetDist = Mathf.Max(0f, cfg.distance);
+
+        // 이 동안 기본 경로 이동은 막고 agent.Move로만 이동시키는 용도
+        castMoveLock = cfg.blockNormalMove;
+
+        // 방향 고정 (allowSteer=false일 때)
+        Vector3 fixedDir = ResolveMoveDir(cfg);
+
+        float t = 0f;
+        float moved = 0f;
+
+        while (t < duration && moved < targetDist && current != null)
+        {
+            float dt = Time.deltaTime;
+            t += dt;
+
+            float p = Mathf.Clamp01(t / duration);
+            float w = cfg.speedCurve != null ? Mathf.Max(0f, cfg.speedCurve.Evaluate(p)) : 1f;
+
+            // curve 가중치로 step 계산
+            float step = (targetDist / duration) * w * dt;
+            step = Mathf.Min(step, targetDist - moved);
+
+            Vector3 dir = cfg.allowSteer ? ResolveMoveDir(cfg) : fixedDir;
+            if (dir.sqrMagnitude < 0.0001f) dir = transform.forward;
+
+            // 충돌 시 멈춤
+            if (cfg.stopOnHit)
+            {
+                // 대충 agent 크기 기반으로 앞을 검사
+                Vector3 origin = transform.position + Vector3.up * Mathf.Max(0.5f, agent.height * 0.5f);
+                float radius = Mathf.Max(0.1f, agent.radius * 0.9f);
+                if (Physics.SphereCast(origin, radius, dir, out var hit, step + 0.05f))
+                    break;
+            }
+
+            // agent가 isStopped=true여도 Move는 적용됩니다(경로 추적만 멈추는 개념)
+            agent.Move(dir * step);
+            moved += step;
+
+            yield return null;
+        }
+
+        castMoveLock = false;
+        castMoveCo = null;
     }
 
     // === 유틸: 마우스 방향(바닥 히트) ===
@@ -195,6 +329,7 @@ public class SkillRunner : MonoBehaviour
         Quaternion target = Quaternion.LookRotation(dir.normalized);
         transform.rotation = Quaternion.RotateTowards(transform.rotation, target, maxDegPerSec * Time.deltaTime);
     }
+
     private float YawAngleTo(Vector3 worldPoint)
     {
         Vector3 dir = worldPoint - transform.position;
@@ -204,12 +339,13 @@ public class SkillRunner : MonoBehaviour
         float angle = Vector3.Angle(transform.forward, dir.normalized);
         return angle;
     }
+
     public NavMeshAgent Agent => agent;
     public Animator Animator => animator;
-    
-    
-    
-private void PlayVfx(SkillDefinition def, VfxTiming timing)
+
+    // ===== VFX Pooling =====
+
+    private void PlayVfx(SkillDefinition def, VfxTiming timing)
     {
         if (def == null || def.vfx == null) return;
 
@@ -251,7 +387,6 @@ private void PlayVfx(SkillDefinition def, VfxTiming timing)
             float life = v.lifeTime;
             if (life <= 0f)
             {
-                // Auto lifetime from ParticleSystem if possible (fallback)
                 life = EstimateParticleLifetime(inst);
                 if (life <= 0f) life = 1.5f;
             }
@@ -277,7 +412,6 @@ private void PlayVfx(SkillDefinition def, VfxTiming timing)
                 if (string.IsNullOrEmpty(custom)) return transform;
                 if (socketCache.TryGetValue(custom, out var cached) && cached) return cached;
 
-                // Allow "Child/GrandChild" path
                 var found = transform.Find(custom);
                 if (!found) found = FindDeepChild(transform, custom);
 
@@ -292,7 +426,6 @@ private void PlayVfx(SkillDefinition def, VfxTiming timing)
 
     private static Transform FindDeepChild(Transform root, string name)
     {
-        // Name search (slower) - used only if custom path fails
         var stack = new Stack<Transform>();
         stack.Push(root);
         while (stack.Count > 0)
@@ -358,7 +491,6 @@ private void PlayVfx(SkillDefinition def, VfxTiming timing)
         float duration = main.duration;
         float startLifetime = 0f;
 
-        // Approx lifetime: duration + max start lifetime
         switch (main.startLifetime.mode)
         {
             case ParticleSystemCurveMode.Constant:

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 public enum VfxTiming { OnStart, OnHit, OnEnd }
 public enum VfxAttach { None, PlayerRoot, SwordTip, SwordBase, Custom }
 
+
 [System.Serializable]
 public class VfxSpawn
 {
@@ -50,6 +51,9 @@ public class SkillDefinition : ScriptableObject
     public Vector3 weaponLocalPosOffset;
     public Vector3 weaponLocalEulerOffset;
     public VfxTiming weaponPoseApplyTiming = VfxTiming.OnStart; // OnStart(혹은 AnimStart)에서 적용
+    
+    [Header("Move While Cast")]
+    public CastMoveConfig castMove;
     
     [Header("VFX")]
     public List<VfxSpawn> vfx = new List<VfxSpawn>();
