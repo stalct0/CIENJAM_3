@@ -53,7 +53,7 @@ public class PlayerInputHandler : MonoBehaviour
         ClearOneFrameTriggers();
     }
 
-    void UpdateAimPoint()
+    public void UpdateAimPoint()
     {
         Vector2 screenPos = Mouse.current.position.ReadValue();
         Ray ray = cam.ScreenPointToRay(screenPos);
@@ -69,7 +69,7 @@ public class PlayerInputHandler : MonoBehaviour
         }
     }
 
-    void ReadInputsIntoState()
+    public void ReadInputsIntoState()
     {
         if (Mouse.current.leftButton.wasPressedThisFrame)
             inputState.castLMB = true;
@@ -88,7 +88,7 @@ public class PlayerInputHandler : MonoBehaviour
         }
     }
 
-    void DispatchStateToControllers()
+    public void DispatchStateToControllers()
     {
         if (skillRunner != null)
             skillRunner.SetAimPoint(inputState.hasAimPoint, inputState.aimWorldPoint);
@@ -110,7 +110,7 @@ public class PlayerInputHandler : MonoBehaviour
         }
     }
 
-    void ClearOneFrameTriggers()
+    public void ClearOneFrameTriggers()
     {
         inputState.castLMB = false;
         inputState.castQ = false;

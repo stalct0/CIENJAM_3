@@ -4,7 +4,7 @@
     "PeerMode": 0,
     "LagCompensation": {
         "Enabled": false,
-        "HitboxBufferLengthInMs": 400,
+        "HitboxBufferLengthInMs": 273,
         "HitboxDefaultCapacity": 512,
         "CachedStaticCollidersSize": 64
     },
@@ -20,10 +20,10 @@
         "SimulationUpdateTimeMode": 0,
         "PlayerCount": 10,
         "TickRateSelection": {
-            "Client": 32,
+            "Client": 60,
             "ServerIndex": 0,
-            "ClientSendIndex": 1,
-            "ServerSendIndex": 1
+            "ClientSendIndex": 0,
+            "ServerSendIndex": 0
         }
     },
     "Network": {

@@ -1,356 +1,158 @@
-﻿using UnityEngine;
-using Fusion;
-using Fusion.Addons.SimpleKCC;
-using UnityEngine.Rendering;
+﻿using Fusion;
+using UnityEngine;
+using UnityEngine.InputSystem;
 
+public sealed class Player : NetworkBehaviour
+{
+    [Header("References")]
+    public PlayerInputHandler InputHandler;
 
-	/// <summary>
-	/// Main player scrip - controls player movement and animations.
-	/// </summary>
-	public sealed class Player : NetworkBehaviour
-	{
-		
-		[Header("References")]
-		public Health Health;
-		public SimpleKCC KCC;
-		public PlayerInput PlayerInput;
-		public Animator Animator;
-		public Transform CameraPivot;
-		public Transform CameraHandle;
-		public Transform ScalingRoot;
-		public UINameplate Nameplate;
-		public Collider Hitbox;
-		public Renderer[] HeadRenderers;
-		public GameObject[] FirstPersonOverlayObjects;
+    // 1. 네트워크 동기화 데이터 구조체
+    public struct PlayerNetworkInputState : INetworkStruct
+    {
+        public int CastLMBCount;
+        public int CastQCount;
+        public int CastWCount;
+        public int CastECount;
+        public int CastRCount;
+        public int MoveClickCount;
+        public int HasAimPointCount;
 
-		[Header("Movement Setup")]
-		public float WalkSpeed = 2f;
-		public float JumpImpulse = 10f;
-		public float UpGravity = 25f;
-		public float DownGravity = 40f;
+        public Vector3 MoveWorldPoint;
+        public Vector3 AimWorldPoint;
+    }
 
-		[Header("Movement Accelerations")]
-		public float GroundAcceleration = 55f;
-		public float GroundDeceleration = 25f;
-		public float AirAcceleration = 25f;
-		public float AirDeceleration = 1.3f;
+    [Networked]
+    public PlayerNetworkInputState NetworkedInput { get; set; }
 
-		[Header("Fire Setup")]
-		public LayerMask HitMask;
-		public GameObject ImpactPrefab;
-		public ParticleSystem MuzzleParticle;
+    private ChangeDetector _changeDetector;
 
-		[Header("Animation Setup")]
-		public Transform ChestTargetPosition;
-		public Transform ChestBone;
+    public GameManager GameManager;
 
-		[Header("Sounds")]
-		public AudioSource FireSound;
-		public AudioSource FootstepSound;
-		public AudioClip JumpAudioClip;
-		public AudioClip LandAudioClip;
+    // 프록시 카운트 비교용 로컬 변수
+    private int _lastLMBCount;
+    private int _lastQCount;
+    private int _lastWCount;
+    private int _lastECount;
+    private int _lastRCount;
+    private int _lastMoveClickCount;
+    private int _lastHasAimPointCount;
 
-		[Header("VFX")]
-		public ParticleSystem DustParticles;
-		
-		public PlayerInputHandler InputHandler;
-		public GameObject VisualRoot;
-		[Networked]
-		private Vector3 _playerLocation { get; set; }
+    private bool _isInitialized;
 
-		[Networked, HideInInspector, Capacity(24), OnChangedRender(nameof(OnNicknameChanged))]
-		public string Nickname { get; set; }
-		[Networked, HideInInspector]
-		public int ChickenKills { get; set; }
+    public override void Spawned()
+    {
+        // A. 기본 초기화
+        if (InputHandler != null) InputHandler.enabled = false;
+        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+        SyncCountsToCurrent();
 
-		//[Networked, OnChangedRender(nameof(OnJumpingChanged))]
-		private NetworkBool _isJumping { get; set; }
-		[Networked]
-		private Vector3 _hitPosition { get; set; }
-		[Networked]
-		private Vector3 _hitNormal { get; set; }
-		[Networked]
-		private int _fireCount { get; set; }
-		
-		// Animation IDs
-		private int _animIDSpeedX;
-		private int _animIDSpeedZ;
-		private int _animIDMoveSpeedZ;
-		private int _animIDGrounded;
-		private int _animIDPitch;
-		private int _animIDShoot;
+        // B. GameManager 등록 (내 캐릭터일 때만)
+        if (HasStateAuthority)
+        {
+            if (GameManager != null)
+            {
+                GameManager.LocalPlayer = this;
+            }
+        }
 
-		private Vector3 _moveVelocity;
-		private int _visibleFireCount;
+        _isInitialized = true;
+    }
 
-		private GameManager _gameManager;
-		
-		public override void Spawned()
-		{
-			if (HasStateAuthority)
-			{
-				_gameManager = FindObjectOfType<GameManager>();
+    private void SyncCountsToCurrent()
+    {
+        var current = NetworkedInput;
+        _lastLMBCount = current.CastLMBCount;
+        _lastQCount = current.CastQCount;
+        _lastWCount = current.CastWCount;
+        _lastECount = current.CastECount;
+        _lastRCount = current.CastRCount;
+        _lastMoveClickCount = current.MoveClickCount;
+        _lastHasAimPointCount = current.HasAimPointCount;
+    }
 
-				// Set player nickname that is saved in UIGameMenu
-				Nickname = PlayerPrefs.GetString("PlayerName");
-			}
-			
-			InputHandler.enabled = HasInputAuthority;
-			// In case the nickname is already changed,
-			// we need to trigger the change manually
-			OnNicknameChanged();
+    void Update()
+    {
+        // 권한자는 매 프레임 실제 마우스/키보드 입력을 읽음
+        if (HasStateAuthority && _isInitialized)
+        {
+            if (Mouse.current == null || Keyboard.current == null) return;
+            InputHandler.UpdateAimPoint();
+            InputHandler.ReadInputsIntoState();
+        }
+    }
 
-			// Reset visible fire count
-			_visibleFireCount = _fireCount;
-		}
+    public override void FixedUpdateNetwork()
+    {
+        if (!_isInitialized) return;
 
-		public override void FixedUpdateNetwork()
-		{
-			VisualRoot.transform.position = InputHandler.transform.position;
-			if (HasStateAuthority)
-			{
-				
-			}
-			else
-			{
-				
-			}
-		}
+        // [권한자 시뮬레이션]
+        if (HasStateAuthority)
+        {
+            var state = NetworkedInput;
 
-		/*
+            // 로컬 입력을 카운트로 변환
+            if (InputHandler.inputState.castLMB) state.CastLMBCount++;
+            if (InputHandler.inputState.castQ) state.CastQCount++;
+            if (InputHandler.inputState.castW) state.CastWCount++;
+            if (InputHandler.inputState.castE) state.CastECount++;
+            if (InputHandler.inputState.castR) state.CastRCount++;
+            if (InputHandler.inputState.moveClick) state.MoveClickCount++;
+            if (InputHandler.inputState.hasAimPoint) state.HasAimPointCount++;
 
-		public override void FixedUpdateNetwork()
-		{
-			if (KCC.Position.y < -15f)
-			{
-				// Player fell, let's kill him
-				Health.TakeHit(1000);
-			}
+            state.MoveWorldPoint = InputHandler.inputState.moveWorldPoint;
+            state.AimWorldPoint = InputHandler.inputState.aimWorldPoint;
 
-			if (Health.IsFinished)
-			{
-				// Player is dead and death timer is finished, let's respawn the player
-				Respawn(_gameManager.GetSpawnPosition());
-			}
+            NetworkedInput = state;
 
-			var input = Health.IsAlive ? PlayerInput.CurrentInput : default;
-			ProcessInput(input);
+            // 권한자 로직 실행 및 트리거 초기화
+            InputHandler.DispatchStateToControllers();
+            InputHandler.ClearOneFrameTriggers();
+        }
+    }
 
-			if (KCC.IsGrounded)
-			{
-				// Stop jumping
-				_isJumping = false;
-			}
+    public override void Render()
+    {
+        // [프록시 시뮬레이션] Shared Mode에서는 Render에서 변화를 감지해야 함
+        if (!HasStateAuthority)
+        {
+            foreach (var change in _changeDetector.DetectChanges(this))
+            {
+                if (change == nameof(NetworkedInput))
+                {
+                    SyncNetworkInputToProxyHandler();
+                    
+                    // 갱신된 입력을 바탕으로 프록시 캐릭터 구동
+                    InputHandler.DispatchStateToControllers();
+                    
+                    // 실행 후 프록시 트리거도 즉시 초기화 (중요)
+                    InputHandler.ClearOneFrameTriggers();
+                }
+            }
+        }
+    }
 
-			KCC.SetActive(Health.IsAlive);
+    private void SyncNetworkInputToProxyHandler()
+    {
+        var current = NetworkedInput;
 
-			PlayerInput.ResetInput();
-		}
+        InputHandler.inputState.castLMB = (current.CastLMBCount != _lastLMBCount);
+        InputHandler.inputState.castQ = (current.CastQCount != _lastQCount);
+        InputHandler.inputState.castW = (current.CastWCount != _lastWCount);
+        InputHandler.inputState.castE = (current.CastECount != _lastECount);
+        InputHandler.inputState.castR = (current.CastRCount != _lastRCount);
+        InputHandler.inputState.moveClick = (current.MoveClickCount != _lastMoveClickCount);
+        InputHandler.inputState.hasAimPoint = (current.HasAimPointCount != _lastHasAimPointCount);
 
-		public override void Render()
-		{
-			if (HasStateAuthority)
-			{
-				// Set look rotation for Render.
-				KCC.SetLookRotation(PlayerInput.CurrentInput.LookRotation, -90f, 90f);
-			}
+        InputHandler.inputState.moveWorldPoint = current.MoveWorldPoint;
+        InputHandler.inputState.aimWorldPoint = current.AimWorldPoint;
 
-			// Transform velocity vector to local space.
-			var moveSpeed = transform.InverseTransformVector(KCC.RealVelocity);
-
-			Animator.SetFloat(_animIDSpeedX, moveSpeed.x, 0.1f, Time.deltaTime);
-			Animator.SetFloat(_animIDSpeedZ, moveSpeed.z, 0.1f, Time.deltaTime);
-			Animator.SetBool(_animIDGrounded, KCC.IsGrounded);
-			Animator.SetFloat(_animIDPitch, KCC.GetLookRotation(true, false).x, 0.02f, Time.deltaTime);
-
-			FootstepSound.enabled = KCC.IsGrounded && KCC.RealSpeed > 1f;
-			ScalingRoot.localScale = Vector3.Lerp(ScalingRoot.localScale, Vector3.one, Time.deltaTime * 8f);
-
-			var emission = DustParticles.emission;
-			emission.enabled = KCC.IsGrounded && KCC.RealSpeed > 1f;
-
-			ShowFireEffects();
-
-			// Disable hits when player is dead
-			Hitbox.enabled = Health.IsAlive;
-		}
-
-		private void Awake()
-		{
-			AssignAnimationIDs();
-		}
-
-		private void LateUpdate()
-		{
-			if (Health.IsAlive == false)
-				return;
-
-			// Update camera pivot (influences ChestIK)
-			// (KCC look rotation is set earlier in Render)
-			var pitchRotation = KCC.GetLookRotation(true, false);
-			CameraPivot.localRotation = Quaternion.Euler(pitchRotation);
-
-			// Dummy IK solution, we are snapping chest bone to prepared ChestTargetPosition position
-			// Lerping blends the fixed position with little bit of animation position.
-			float blendAmount = HasStateAuthority ? 0.05f : 0.2f;
-			ChestBone.position = Vector3.Lerp(ChestTargetPosition.position, ChestBone.position, blendAmount);
-			ChestBone.rotation = Quaternion.Lerp(ChestTargetPosition.rotation, ChestBone.rotation, blendAmount);
-
-			// Only local player needs to update the camera
-			if (HasStateAuthority)
-			{
-				// Transfer properties from camera handle to Main Camera.
-				//Camera.main.transform.SetPositionAndRotation(CameraHandle.position, CameraHandle.rotation);
-			}
-		}
-
-		private void ProcessInput(GameplayInput input)
-		{
-			KCC.SetLookRotation(input.LookRotation, -90f, 90f);
-
-			// It feels better when player falls quicker
-			KCC.SetGravity(KCC.RealVelocity.y >= 0f ? UpGravity : DownGravity);
-
-			// Calculate correct move direction from input (rotated based on latest KCC rotation)
-			var moveDirection = KCC.TransformRotation * new Vector3(input.MoveDirection.x, 0f, input.MoveDirection.y);
-			var desiredMoveVelocity = moveDirection * WalkSpeed;
-
-			float acceleration;
-			if (desiredMoveVelocity == Vector3.zero)
-			{
-				// No desired move velocity - we are stopping.
-				acceleration = KCC.IsGrounded == true ? GroundDeceleration : AirDeceleration;
-			}
-			else
-			{
-				acceleration = KCC.IsGrounded == true ? GroundAcceleration : AirAcceleration;
-			}
-
-			_moveVelocity = Vector3.Lerp(_moveVelocity, desiredMoveVelocity, acceleration * Runner.DeltaTime);
-			float jumpImpulse = 0f;
-
-			// Comparing current input buttons to previous input buttons - this prevents glitches when input is lost
-			if (KCC.IsGrounded && input.Jump)
-			{
-				// Set world space jump vector
-				jumpImpulse = JumpImpulse;
-				_isJumping = true;
-			}
-
-			KCC.Move(_moveVelocity, jumpImpulse);
-
-			// Update camera pivot so fire transform (CameraHandle) is correct
-			var pitchRotation = KCC.GetLookRotation(true, false);
-			CameraPivot.localRotation = Quaternion.Euler(pitchRotation);
-
-			if (input.Fire)
-			{
-				Fire();
-			}
-		}
-
-		private void Fire()
-		{
-			// Clear hit position in case nothing will be hit
-			_hitPosition = Vector3.zero;
-
-			// Whole projectile path and effects are immediately processed (= hitscan projectile)
-			if (Physics.Raycast(CameraHandle.position, CameraHandle.forward, out var hitInfo, 200f, HitMask))
-			{
-				// Deal damage
-				var health = hitInfo.collider != null ? hitInfo.collider.GetComponentInParent<Health>() : null;
-				if (health != null)
-				{
-					health.Killed = OnEnemyKilled;
-					health.TakeHit(1, true);
-				}
-
-				// Save hit point to correctly show bullet path on all clients.
-				// This however works only for single projectile per FUN and with higher fire cadence
-				// some projectiles might not be fired on proxies because we save only the position
-				// of the LAST hit.
-				_hitPosition = hitInfo.point;
-				_hitNormal = hitInfo.normal;
-			}
-
-			// In this example projectile count property (fire count) is used not only for weapon fire effects
-			// but to spawn the projectile visuals themselves.
-			_fireCount++;
-		}
-
-		private void Respawn(Vector3 position)
-		{
-			ChickenKills = 0;
-			Health.Revive();
-
-			KCC.SetPosition(position);
-			KCC.SetLookRotation(0f, 0f);
-
-			_moveVelocity = Vector3.zero;
-		}
-
-		private void OnEnemyKilled(Health enemyHealth)
-		{
-			// Killing chicken grants 1 point, killing other player has -10 points penalty.
-
-		}
-
-		private void ShowFireEffects()
-		{
-			// Notice we are not using OnChangedRender for fireCount property but instead
-			// we are checking against a local variable and show fire effects only when visible
-			// fire count is SMALLER. This prevents triggering false fire effects when
-			// local player mispredicted fire (e.g. input got lost) and fireCount property got decreased.
-			if (_visibleFireCount < _fireCount)
-			{
-				FireSound.PlayOneShot(FireSound.clip);
-				MuzzleParticle.Play();
-				Animator.SetTrigger(_animIDShoot);
-
-				if (_hitPosition != Vector3.zero)
-				{
-					// Impact gets destroyed automatically with DestroyAfter script
-					Instantiate(ImpactPrefab, _hitPosition, Quaternion.LookRotation(_hitNormal));
-				}
-			}
-
-			_visibleFireCount = _fireCount;
-		}
-
-		private void AssignAnimationIDs()
-		{
-			_animIDSpeedX = Animator.StringToHash("SpeedX");
-			_animIDSpeedZ = Animator.StringToHash("SpeedZ");
-			_animIDGrounded = Animator.StringToHash("Grounded");
-			_animIDPitch = Animator.StringToHash("Pitch");
-			_animIDShoot = Animator.StringToHash("Shoot");
-		}
-
-		private void OnJumpingChanged()
-		{
-			if (_isJumping)
-			{
-				AudioSource.PlayClipAtPoint(JumpAudioClip, KCC.Position, 0.5f);
-			}
-			else
-			{
-				AudioSource.PlayClipAtPoint(LandAudioClip, KCC.Position, 1f);
-			}
-
-			if (HasStateAuthority == false)
-			{
-				ScalingRoot.localScale = _isJumping ? new Vector3(0.5f, 1.5f, 0.5f) : new Vector3(1.25f, 0.75f, 1.25f);
-			}
-		}
-		*/
-
-		private void OnNicknameChanged()
-		{
-			if (HasStateAuthority)
-				return; // Do not show nickname for local player
-
-			Nameplate.SetNickname(Nickname);
-		}
-		
-	}
-
+        _lastLMBCount = current.CastLMBCount;
+        _lastQCount = current.CastQCount;
+        _lastWCount = current.CastWCount;
+        _lastECount = current.CastECount;
+        _lastRCount = current.CastRCount;
+        _lastMoveClickCount = current.MoveClickCount;
+        _lastHasAimPointCount = current.HasAimPointCount;
+    }
+}
