@@ -24,4 +24,9 @@ public class AnimEventsForwarder : MonoBehaviour
     {
         runner?.AnimEvent_Start();
     }
+
+    public void Move()
+    {
+        runner?.AnimEvent_Move();
+    }
 }

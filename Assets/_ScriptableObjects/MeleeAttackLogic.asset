@@ -18,4 +18,8 @@ MonoBehaviour:
   damage: 10
   targetMask:
     serializedVersion: 2
+    m_Bits: 512
+  checkLineOfSight: 0
+  obstacleMask:
+    serializedVersion: 2
     m_Bits: 0
