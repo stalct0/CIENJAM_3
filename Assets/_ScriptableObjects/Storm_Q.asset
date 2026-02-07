@@ -23,7 +23,7 @@ MonoBehaviour:
   lockMovementWhileTurning: 1
   overrideWeaponPose: 1
   weaponLocalPosOffset: {x: 0, y: 0, z: 0}
-  weaponLocalEulerOffset: {x: 40, y: -30, z: 30}
+  weaponLocalEulerOffset: {x: 40, y: -45, z: 30}
   weaponPoseApplyTiming: 0
   vfx:
   - timing: 0
