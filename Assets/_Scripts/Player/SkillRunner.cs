@@ -74,6 +74,10 @@ public class SkillRunner : MonoBehaviour
     private readonly Dictionary<string, Transform> socketCache = new();
     private readonly Dictionary<GameObject, Vector3> prefabBaseScale = new();
 
+    //Debug
+    public SkillDefinition Debug_CurrentSkill => current;
+    public bool Debug_HasCurrentSkill => current != null;
+    
     private void Awake()
     {
         if (!animator) animator = GetComponentInChildren<Animator>();

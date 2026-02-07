@@ -1713,6 +1713,8 @@ GameObject:
   - component: {fileID: 7969266578487608626}
   - component: {fileID: 5941733949893345456}
   - component: {fileID: 5275770540742136581}
+  - component: {fileID: 2341760532309210022}
+  - component: {fileID: 8143942197226256889}
   m_Layer: 6
   m_Name: Storm
   m_TagString: Untagged
@@ -1920,6 +1922,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hp: 100
+  maxHp: 100
   invincibleTime: 0
   enableKnockback: 1
   knockbackDistance: 1.2
@@ -2018,6 +2021,37 @@ MonoBehaviour:
   guardHalfAngle: 60
   knockbackImmuneWhileGuard: 1
   externalKnockbackImmune: 0
+--- !u!114 &2341760532309210022
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4932414756607366036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9f187ae610e51b44b3aaf3e71084b1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gauge: 0
+--- !u!114 &8143942197226256889
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4932414756607366036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4bdc87a9c87a2d4383523786374d2b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  runner: {fileID: 2467273136986853341}
+  drawOnlyWhenCasting: 1
+  previewSkill: {fileID: 0}
+  gizmoColor: {r: 1, g: 0.2, b: 0.2, a: 0.6}
+  arcColor: {r: 1, g: 0.8, b: 0.2, a: 0.9}
+  arcSegments: 24
 --- !u!1 &4960500615755703903
 GameObject:
   m_ObjectHideFlags: 0
