@@ -10,56 +10,71 @@ public class MeleeAttackLogic : SkillLogic
     public float radius = 1.2f;
     public float angleDeg = 90f;
 
-    [Header("Damage")]
+    [Header("Base damage (before charge scaling)")]
     public int damage = 10;
 
-    [Header("Masks")]
+    [Header("Target mask (physics candidate filter)")]
     public LayerMask targetMask;
 
-    [Header("Optional")]
+    [Header("Optional line-of-sight")]
     public bool checkLineOfSight = false;
     public LayerMask obstacleMask;
 
-    const int MAX_HITS = 32;
-    readonly Collider[] _buffer = new Collider[MAX_HITS];
-    readonly HashSet<int> _hitSet = new HashSet<int>();
+    private const int MAX_HITS = 32;
+    private readonly Collider[] _buffer = new Collider[MAX_HITS];
+    private readonly HashSet<int> _unique = new HashSet<int>();
 
-    // 리플렉션 캐시 (있으면 사용, 없으면 1.0 처리)
-    static PropertyInfo _piHitScale;
-    static PropertyInfo _piDamageScale;
+    // Reflection cache (SkillRunner에 CurrentCharge01이 없을 수도 있으니 안전 처리)
+    private static PropertyInfo _piCharge01;
 
     public override void OnStart(SkillRunner runner, SkillDefinition def)
     {
-        // 필요 없으면 비워도 됨
+        // 필요하면 사용 (대부분 비워둬도 됨)
     }
 
     public override void OnAnimHit(SkillRunner runner, SkillDefinition def)
     {
         if (runner == null) return;
 
-        _hitSet.Clear();
+        _unique.Clear();
 
         Vector3 origin = runner.transform.position + Vector3.up * 1.0f;
+
         Vector3 forward = runner.transform.forward;
         forward.y = 0f;
-
-        if (forward.sqrMagnitude < 0.0001f)
-            forward = Vector3.forward;
-
+        if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
         forward.Normalize();
 
-        // ✅ 차지 기반 판정 스케일 (없으면 1.0)
-        float hitScale = GetRunnerScale(runner, ref _piHitScale, "CurrentHitScale", 1f);
-        hitScale = Mathf.Max(0.01f, hitScale);
+        // ==============================
+        // Charge01 (0~1) 읽기
+        // ==============================
+        float c01 = GetRunnerFloat(runner, ref _piCharge01, "CurrentCharge01", 0f);
+        c01 = Mathf.Clamp01(c01);
 
-        // ✅ 차지 기반 데미지 스케일 (없으면 1.0)
-        float damageScale = GetRunnerScale(runner, ref _piDamageScale, "CurrentDamageScale", 1f);
+        // ==============================
+        // Hit/VFX/Damage scaling
+        // SkillDefinition의 chargeScale을 사용
+        // ==============================
+        float hitScale = 1f;
+        float damageScale = 1f;
+
+        if (def != null && def.isChargeSkill && def.chargeScale != null)
+        {
+            // curve가 있으면 curve로 조정 (SkillDefinition에 이미 있음)
+            float t = c01;
+            if (def.chargeScale.curve != null)
+                t = Mathf.Clamp01(def.chargeScale.curve.Evaluate(c01));
+
+            hitScale = Mathf.Lerp(def.chargeScale.minHitScale, def.chargeScale.maxHitScale, t);
+            damageScale = Mathf.Lerp(def.chargeScale.minDamageScale, def.chargeScale.maxDamageScale, t);
+        }
+
+        hitScale = Mathf.Max(0.01f, hitScale);
         damageScale = Mathf.Max(0.01f, damageScale);
 
-        // 차지 비례로 반경 증가
         float scaledRadius = radius * hitScale;
 
-        // 전방 중심(기본은 range 그대로, radius만 커짐)
+        // OverlapSphere 중심: 전방에 살짝 치우치게(원래 코드 스타일 유지)
         Vector3 center = origin + forward * (range * 0.5f);
 
         int count = Physics.OverlapSphereNonAlloc(
@@ -72,34 +87,36 @@ public class MeleeAttackLogic : SkillLogic
 
         for (int i = 0; i < count; i++)
         {
-            Collider c = _buffer[i];
-            if (c == null) continue;
+            Collider col = _buffer[i];
+            if (!col) continue;
 
             // 자기 자신 제외
-            if (c.transform.root == runner.transform.root) continue;
+            if (col.transform.root == runner.transform.root) continue;
 
-            IDamageable dmg = c.GetComponentInParent<IDamageable>();
-            if (dmg == null) continue;
+            // 데미지 받을 대상 찾기
+            IDamageable target = col.GetComponentInParent<IDamageable>();
+            if (target == null) continue;
 
-            int id = ((Component)dmg).gameObject.GetInstanceID();
-            if (!_hitSet.Add(id)) continue;
+            // 동일 대상 중복 타격 방지(한 Hit 이벤트에서 1회)
+            int key = ((Component)target).gameObject.GetInstanceID();
+            if (!_unique.Add(key)) continue;
 
-            Vector3 to = ((Component)dmg).transform.position - runner.transform.position;
+            // 부채꼴 판정
+            Vector3 to = ((Component)target).transform.position - runner.transform.position;
             to.y = 0f;
             if (to.sqrMagnitude < 0.0001f) continue;
 
-            // 부채꼴 각도 체크
-            float a = Vector3.Angle(forward, to.normalized);
-            if (a > angleDeg * 0.5f) continue;
+            float ang = Vector3.Angle(forward, to.normalized);
+            if (ang > angleDeg * 0.5f) continue;
 
-            // 거리 체크 (radius 커진 만큼 여유 반영)
+            // 거리 판정 (반경 보정 포함)
             if (to.magnitude > range + scaledRadius) continue;
 
-            // 시야 가림 체크(옵션)
+            // (옵션) 시야 가림 판정
             if (checkLineOfSight)
             {
-                Vector3 targetPoint = c.ClosestPoint(origin);
-                Vector3 dir = (targetPoint - origin);
+                Vector3 hitPointTmp = col.ClosestPoint(origin);
+                Vector3 dir = hitPointTmp - origin;
                 float dist = dir.magnitude;
 
                 if (dist > 0.001f)
@@ -110,36 +127,45 @@ public class MeleeAttackLogic : SkillLogic
                 }
             }
 
-            // ✅ 차지 비례 데미지 적용
-            int finalDamage = runner.GetCurrentDamage(def);
+            // ==============================
+            // Final Damage (charge scaled)
+            // ==============================
+            int finalDamage = Mathf.RoundToInt(damage * damageScale);
+            CombatIdentity attackerId = runner.GetComponentInParent<CombatIdentity>();
+            if (attackerId == null) attackerId = runner.GetComponentInChildren<CombatIdentity>();
             
             var info = new DamageInfo
             {
                 attacker = runner.gameObject,
+                attackerOwnerId = attackerId != null ? attackerId.OwnerId : 0,
+                attackerTeam = attackerId != null ? attackerId.Team : TeamId.None,
+                attackerEntityId = attackerId != null ? attackerId.EntityId : 0,
+
                 amount = finalDamage,
-                hitPoint = c.ClosestPoint(origin),
+                hitPoint = col.ClosestPoint(origin),
                 hitDir = to.normalized,
                 skill = def
             };
 
-            dmg.TakeDamage(info);
+            target.TakeDamage(info);
         }
     }
 
-    private static float GetRunnerScale(SkillRunner runner, ref PropertyInfo cache, string propName, float fallback)
+    private static float GetRunnerFloat(SkillRunner runner, ref PropertyInfo cache, string propName, float fallback)
     {
         if (runner == null) return fallback;
 
         if (cache == null)
         {
-            cache = runner.GetType().GetProperty(propName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            cache = runner.GetType().GetProperty(
+                propName,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+            );
         }
 
         if (cache == null) return fallback;
 
         object v = cache.GetValue(runner, null);
-        if (v is float f) return f;
-
-        return fallback;
+        return v is float f ? f : fallback;
     }
 }

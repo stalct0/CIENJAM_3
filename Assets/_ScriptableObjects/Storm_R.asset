@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   slot: 4
   cooldown: 2
+  baseDamage: 10
+  useChargeDamage: 1
+  minChargeDamage: 10
+  maxChargeDamage: 30
   animatorTrigger: Skill_R_Attack
   lockMovement: 1
   logic: {fileID: 11400000, guid: 7cf62c4530bdd2b4b90e68df3338b656, type: 2}
@@ -59,6 +63,8 @@ MonoBehaviour:
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
+    minDamageScale: 1
+    maxDamageScale: 1
   vfx:
   - timing: 0
     prefab: {fileID: 5942177893964023165, guid: 438c0b7b02dcafa4996592b62d22671f,
