@@ -2,10 +2,27 @@ using UnityEngine;
 
 public class HealthEX : MonoBehaviour, IDamageable
 {
+    [Header("HP")]
     public int hp = 100;
-    public float invincibleTime = 0.0f;
 
-    float invUntil;
+    [Header("Invincibility")]
+    public float invincibleTime = 0.0f;
+    private float invUntil;
+
+    [Header("Knockback")]
+    [SerializeField] private bool enableKnockback = true;
+    [SerializeField] private float knockbackDistance = 1.2f;
+    [SerializeField] private float knockbackDuration = 0.12f;
+    [SerializeField] private bool lockInputDuringKnockback = true;
+
+    private KnockbackController kb;
+
+    private void Awake()
+    {
+        kb = GetComponent<KnockbackController>();
+        if (!kb) kb = GetComponentInParent<KnockbackController>();
+        if (!kb) kb = GetComponentInChildren<KnockbackController>();
+    }
 
     public void TakeDamage(DamageInfo info)
     {
@@ -14,7 +31,34 @@ public class HealthEX : MonoBehaviour, IDamageable
         hp -= info.amount;
         invUntil = Time.time + invincibleTime;
 
-        Debug.Log($"{name} took {info.amount} from {info.attacker.name}. HP={hp}");
-        if (hp <= 0) Destroy(gameObject);
+        // ✅ 넉백 적용 (스킬은 끊지 않고, 입력만 잠그는 구조)
+        if (enableKnockback && kb != null)
+        {
+            Vector3 from;
+
+            // 공격자가 있으면 그 위치 기준으로 밀기
+            if (info.attacker != null)
+            {
+                from = info.attacker.transform.position;
+            }
+            else
+            {
+                // attacker가 없으면 hitDir(공격자->피격자 방향)을 이용해 "가짜 from" 생성
+                // ApplyKnockback는 (transform.position - from) 방향으로 밀기 때문에
+                // from을 피격자 위치에서 hitDir만큼 뒤로 두면 같은 결과가 납니다.
+                Vector3 dir = info.hitDir;
+                dir.y = 0f;
+                if (dir.sqrMagnitude < 0.0001f) dir = -transform.forward;
+                dir.Normalize();
+                from = transform.position - dir;
+            }
+
+            kb.ApplyKnockback(from, knockbackDistance, knockbackDuration, lockInputDuringKnockback);
+        }
+
+        Debug.Log($"{name} took {info.amount} from {(info.attacker ? info.attacker.name : "NULL")}. HP={hp}");
+
+        if (hp <= 0)
+            Destroy(gameObject);
     }
 }

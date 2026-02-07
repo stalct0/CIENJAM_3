@@ -30,6 +30,7 @@ public class PlayerInputHandler : MonoBehaviour
 
     public PlayerMovement mover;
     public SkillRunner skillRunner;
+    public KnockbackController knockback;
 
     void Awake()
     {
@@ -94,6 +95,12 @@ public class PlayerInputHandler : MonoBehaviour
         {
             if (skillRunner == null || !skillRunner.IsBusy)
                 mover.MoveTo(inputState.moveWorldPoint);
+        }
+        
+        if (knockback != null && knockback.IsLocked)
+        {
+            // 이동 + 스킬 입력 전달 차단
+            return;
         }
 
         if (skillRunner == null) return;
