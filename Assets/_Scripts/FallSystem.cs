@@ -17,7 +17,7 @@ public class FallSystem : MonoBehaviour
     public bool respawnInsteadOfDeath = false;
     public Transform respawnPoint;
 
-    private bool isFalling = false;
+    public bool isFalling = false;
 
     private void Awake()
     {
@@ -72,7 +72,15 @@ public class FallSystem : MonoBehaviour
             if (knockback == null || !knockback.IsLocked)
                 return;
         }
-
+        
+        // 낙하 시작: 넉백이 agent 재부착하지 못하게 정리
+        if (knockback != null)
+        {
+            // 넉백 속도/락은 끊어도 되고, 유지해도 되는데
+            // 핵심은 "재부착"을 못 하게 하는 것
+            knockback.ForceStopNoReattach();
+        }
+        
         isFalling = true;
 
         // NavMesh 끄기

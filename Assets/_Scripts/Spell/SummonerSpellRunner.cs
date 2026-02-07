@@ -22,7 +22,7 @@ public class SummonerSpellRunner : MonoBehaviour
     [Header("Flash distance")]
     public float flashDistance = 5f; // E 이동거리 기준(임시)
 
-    private readonly Dictionary<SummonerSlot, float> cdEnd = new();
+    public readonly Dictionary<SummonerSlot, float> cdEnd = new();
 
     // ✅ InputHandler가 넣어주는 aim point
     private bool hasAimPoint;
