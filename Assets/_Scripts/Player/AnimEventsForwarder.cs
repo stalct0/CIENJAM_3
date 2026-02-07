@@ -29,4 +29,15 @@ public class AnimEventsForwarder : MonoBehaviour
     {
         runner?.AnimEvent_Move();
     }
+    
+    public void GuardStart()
+    {
+        runner?.AnimEvent_GuardStart();
+    }
+    
+    public void GuardEnd()
+    {
+        runner?.AnimEvent_GuardEnd();
+    }
+    
 }
