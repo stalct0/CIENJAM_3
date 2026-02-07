@@ -1840,7 +1840,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4932414756607366036}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a884072f96379d74f8dddd7cd2fea4c1, type: 3}
   m_Name: 
@@ -1951,9 +1951,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5d78cc72aa93d341b489eb6181ba37f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ownerId: 1
-  entityId: 1
-  team: 1
+  ownerId: 2
+  entityId: 2
+  team: 2
 --- !u!136 &7969266578487608626
 CapsuleCollider:
   m_ObjectHideFlags: 0
