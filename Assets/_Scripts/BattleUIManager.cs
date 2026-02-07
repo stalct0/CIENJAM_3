@@ -12,16 +12,23 @@ public class BattleUIManager : MonoBehaviour
     HealthEX RedPlayerHealth;
     public Image BlueHPGauge;
     public Image RedHPGauge;
-    public SkillDefinition[] SkillDefs; // 0~2: Skills, 3~4: Spells
-    public Image[] CDImgs; // 0~2: Skill CDs, 3~4: Spell CDs
+    public SkillDefinition[] SkillDefs; // 0~2: Skills
+    public Image[] CDImgs; // 0~2: Skill CDs
     public TextMeshProUGUI[] CDTexts;
     public Image UltMask;
     public Image UltGauge;
     public TextMeshProUGUI UltText;
+    public GameObject SpellDIcon;
+    public GameObject SpellFIcon;
     public SkillRunner playerRunner;
     float[] coolDowns;
     bool[] isOnCD;
 
+    void Awake()
+    {
+        SpellDIcon.GetComponent<Image>().sprite = SpellHolder.spellDImage.sprite;
+        SpellFIcon.GetComponent<Image>().sprite = SpellHolder.spellFImage.sprite;
+    }
 
     void Start()
     {
