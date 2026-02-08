@@ -21,17 +21,15 @@ public class BattleUIManager : MonoBehaviour
     public GameObject SpellDIcon;
     public GameObject SpellFIcon;
     public SkillRunner playerRunner;
+    public SummonerSpellRunner spellRunner;
     float[] coolDowns;
     bool[] isOnCD;
 
-    void Awake()
+    void Start()
     {
         SpellDIcon.GetComponent<Image>().sprite = SpellHolder.spellDImage.sprite;
         SpellFIcon.GetComponent<Image>().sprite = SpellHolder.spellFImage.sprite;
-    }
 
-    void Start()
-    {
         BluePlayerHealth = BluePlayer.GetComponentInChildren<HealthEX>();
         RedPlayerHealth = RedPlayer.GetComponentInChildren<HealthEX>();
         
@@ -138,6 +136,36 @@ public class BattleUIManager : MonoBehaviour
         }
     }
 
+    void UpdateSpCdUI()
+    {
+        float dRemain = spellRunner.cdEnd[SummonerSlot.D] - Time.time;
+        float fRemain = spellRunner.cdEnd[SummonerSlot.F] - Time.time;
+        float dDur = spellRunner.spellD.cooldownSeconds;
+        float fDur = spellRunner.spellF.cooldownSeconds;
+
+        if (dRemain > 0f)
+        {
+            SpellDIcon.GetComponentInChildren<Image>().fillAmount = dRemain / dDur;
+            SpellDIcon.GetComponentInChildren<TextMeshProUGUI>().text = Mathf.CeilToInt(dRemain).ToString();
+        }
+        else
+        {
+            SpellDIcon.GetComponentInChildren<Image>().fillAmount = 0f;
+            SpellDIcon.GetComponentInChildren<TextMeshProUGUI>().text = "";
+        }
+
+        if (fRemain > 0f)
+        {
+            SpellFIcon.GetComponentInChildren<Image>().fillAmount = fRemain / fDur;
+            SpellFIcon.GetComponentInChildren<TextMeshProUGUI>().text = Mathf.CeilToInt(fRemain).ToString();
+        }
+        else
+        {
+            SpellFIcon.GetComponentInChildren<Image>().fillAmount = 0f;
+            SpellFIcon.GetComponentInChildren<TextMeshProUGUI>().text = "";
+        }
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -167,6 +195,5 @@ public class BattleUIManager : MonoBehaviour
                 }
             }
         }
-        
     }
 }
