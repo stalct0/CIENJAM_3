@@ -6,60 +6,149 @@ public sealed class Player : NetworkBehaviour
 {
     [Header("References")]
     public PlayerInputHandler InputHandler;
+    public GameManager GameManager;
 
-    // 1. 네트워크 동기화 구조체 (RDown, RUp 추가)
     public struct PlayerNetworkInputState : INetworkStruct
     {
         public int CastLMBCount;
         public int CastQCount;
         public int CastWCount;
         public int CastECount;
-        
-        // R 키의 입력을 Down과 Up 각각 카운트로 관리
         public int CastRDownCount;
         public int CastRUpCount;
-
         public int MoveClickCount;
         public int HasAimPointCount;
-
         public Vector3 MoveWorldPoint;
         public Vector3 AimWorldPoint;
     }
 
-    [Networked]
-    public PlayerNetworkInputState NetworkedInput { get; set; }
+    [Networked] public PlayerNetworkInputState NetworkedInput { get; set; }
 
     private ChangeDetector _changeDetector;
-
-    // 프록시 카운트 비교용 로컬 변수들
-    private int _lastLMBCount;
-    private int _lastQCount;
-    private int _lastWCount;
-    private int _lastECount;
-    private int _lastRDownCount;
-    private int _lastRUpCount;
-    private int _lastMoveClickCount;
-    private int _lastHasAimPointCount;
-
     private bool _isInitialized;
+    private bool _identitySetupDone;
 
-    public GameManager GameManager;
+    private int _lastLMBCount, _lastQCount, _lastWCount, _lastECount, _lastRDownCount, _lastRUpCount, _lastMoveClickCount, _lastHasAimPointCount;
 
     public override void Spawned()
     {
-        // A. 초기화: 핸들러 Update 차단 및 감지기 설정
         if (InputHandler != null) InputHandler.enabled = false;
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
         SyncCountsToCurrent();
+        
+        GameManager = FindObjectOfType<GameManager>();
+        _isInitialized = true;
+    }
 
-        // B. GameManager 등록 (UI 활성화 및 로컬 참조용)
+    // GameManager에서 스폰 직후 호출
+    public void Init()
+    {
+        if (!HasStateAuthority) return;
+        SetupIdentityAndUI();
+    }
+
+    private void Update()
+    {
+        if (!_isInitialized) return;
+
+        // 1. 권한자는 실제 입력을 읽음
         if (HasStateAuthority)
         {
-            GameManager=FindObjectOfType<GameManager>();
-            if (GameManager != null) GameManager.LocalPlayer=this;
+            if (Mouse.current != null && Keyboard.current != null)
+            {
+                InputHandler.UpdateAimPoint();
+                InputHandler.ReadInputsIntoState();
+            }
+        }
+    }
+
+    public override void Render()
+    {
+        if (!_isInitialized) return;
+
+        // 2. [Proxy 전용] 내 화면에 보이는 상대방 캐릭터의 팀 설정 (한 번만)
+        if (!HasStateAuthority && !_identitySetupDone && Runner.SessionInfo.PlayerCount >= 2)
+        {
+            SetupIdentityAndUI();
         }
 
-        _isInitialized = true;
+        // 3. [Proxy 전용] 입력 동기화
+        if (!HasStateAuthority)
+        {
+            foreach (var change in _changeDetector.DetectChanges(this))
+            {
+                if (change == nameof(NetworkedInput))
+                {
+                    SyncNetworkInputToProxyHandler();
+                    InputHandler.DispatchStateToControllers();
+                    InputHandler.ClearOneFrameTriggers();
+                }
+            }
+        }
+    }
+
+    private void SetupIdentityAndUI()
+    {
+        if (GameManager == null || GameManager.BattleUIManager == null) return;
+        var identity = InputHandler.GetComponent<CombatIdentity>();
+        if (identity == null) return;
+
+        // 내가 조종하는 로컬 캐릭터인 경우
+        if (HasStateAuthority)
+        {
+            if (GameManager.player == 0) // 레드팀
+            {
+                identity.SetIdentity(0, TeamId.A, 0);
+                GameManager.BattleUIManager.RedPlayer = InputHandler.gameObject;
+            }
+            else // 블루팀
+            {
+                identity.SetIdentity(1, TeamId.B, 1);
+                GameManager.BattleUIManager.BluePlayer = InputHandler.gameObject;
+            }
+
+            // 내 UI에 정보 연결
+            GameManager.BattleUIManager.playerRunner = InputHandler.skillRunner;
+            GameManager.BattleUIManager.spellRunner = InputHandler.summoner;
+        }
+        // 내 화면에 보이는 상대방(Proxy) 캐릭터인 경우
+        else
+        {
+            // 내가 레드팀(0)이면 상대는 블루팀(1), 내가 블루팀(1)이면 상대는 레드팀(0)
+            if (GameManager.player == 0)
+            {
+                identity.SetIdentity(1, TeamId.B, 1);
+                GameManager.BattleUIManager.BluePlayer = InputHandler.gameObject;
+            }
+            else
+            {
+                identity.SetIdentity(0, TeamId.A, 0);
+                GameManager.BattleUIManager.RedPlayer = InputHandler.gameObject;
+            }
+        }
+
+        _identitySetupDone = true;
+        Debug.Log($"[Identity Setup] {gameObject.name} as {(HasStateAuthority ? "Local" : "Proxy")}");
+    }
+
+    // ... (FixedUpdateNetwork, SyncCountsToCurrent, SyncNetworkInputToProxyHandler는 기존과 동일)
+    public override void FixedUpdateNetwork()
+    {
+        if (!_isInitialized || !HasStateAuthority) return;
+        var state = NetworkedInput;
+        if (InputHandler.inputState.castLMB) state.CastLMBCount++;
+        if (InputHandler.inputState.castQ) state.CastQCount++;
+        if (InputHandler.inputState.castW) state.CastWCount++;
+        if (InputHandler.inputState.castE) state.CastECount++;
+        if (InputHandler.inputState.castRDown) state.CastRDownCount++;
+        if (InputHandler.inputState.castRUp) state.CastRUpCount++;
+        if (InputHandler.inputState.moveClick) state.MoveClickCount++;
+        if (InputHandler.inputState.hasAimPoint) state.HasAimPointCount++;
+        state.MoveWorldPoint = InputHandler.inputState.moveWorldPoint;
+        state.AimWorldPoint = InputHandler.inputState.aimWorldPoint;
+        NetworkedInput = state;
+        InputHandler.DispatchStateToControllers();
+        InputHandler.ClearOneFrameTriggers();
     }
 
     private void SyncCountsToCurrent()
@@ -75,92 +164,19 @@ public sealed class Player : NetworkBehaviour
         _lastHasAimPointCount = current.HasAimPointCount;
     }
 
-    void Update()
-    {
-        // 권한자는 매 프레임 실제 하드웨어 입력을 읽어 핸들러에 임시 저장
-        if (HasStateAuthority && _isInitialized)
-        {
-            if (Mouse.current == null || Keyboard.current == null) return;
-            InputHandler.UpdateAimPoint();
-            InputHandler.ReadInputsIntoState();
-        }
-    }
-
-    public override void FixedUpdateNetwork()
-    {
-        if (!_isInitialized) return;
-
-        // [권한자: 입력 전송]
-        if (HasStateAuthority)
-        {
-            var state = NetworkedInput;
-
-            // 핸들러의 bool 트리거를 네트워크 카운트로 변환
-            if (InputHandler.inputState.castLMB) state.CastLMBCount++;
-            if (InputHandler.inputState.castQ) state.CastQCount++;
-            if (InputHandler.inputState.castW) state.CastWCount++;
-            if (InputHandler.inputState.castE) state.CastECount++;
-            
-            // R 키 Down/Up 반영
-            if (InputHandler.inputState.castRDown) state.CastRDownCount++;
-            if (InputHandler.inputState.castRUp)   state.CastRUpCount++;
-
-            if (InputHandler.inputState.moveClick) state.MoveClickCount++;
-            if (InputHandler.inputState.hasAimPoint) state.HasAimPointCount++;
-
-            state.MoveWorldPoint = InputHandler.inputState.moveWorldPoint;
-            state.AimWorldPoint = InputHandler.inputState.aimWorldPoint;
-
-            NetworkedInput = state;
-
-            // 로직 실행 및 트리거 리셋
-            InputHandler.DispatchStateToControllers();
-            InputHandler.ClearOneFrameTriggers();
-        }
-    }
-
-    public override void Render()
-    {
-        // [프록시: 입력 수신 및 실행]
-        if (!HasStateAuthority)
-        {
-            foreach (var change in _changeDetector.DetectChanges(this))
-            {
-                if (change == nameof(NetworkedInput))
-                {
-                    SyncNetworkInputToProxyHandler();
-                    
-                    // 프록시에서도 Dispatch 호출하여 애니메이션/이펙트 재생
-                    InputHandler.DispatchStateToControllers();
-                    
-                    // 프록시 트리거 즉시 리셋 (중요)
-                    InputHandler.ClearOneFrameTriggers();
-                }
-            }
-        }
-    }
-
     private void SyncNetworkInputToProxyHandler()
     {
         var current = NetworkedInput;
-
-        // 카운트 차이로 버튼 '눌림/뗌' 상태 복원
         InputHandler.inputState.castLMB = (current.CastLMBCount != _lastLMBCount);
         InputHandler.inputState.castQ = (current.CastQCount != _lastQCount);
         InputHandler.inputState.castW = (current.CastWCount != _lastWCount);
         InputHandler.inputState.castE = (current.CastECount != _lastECount);
-        
-        // R 키 Down/Up 복원
         InputHandler.inputState.castRDown = (current.CastRDownCount != _lastRDownCount);
         InputHandler.inputState.castRUp = (current.CastRUpCount != _lastRUpCount);
-
         InputHandler.inputState.moveClick = (current.MoveClickCount != _lastMoveClickCount);
         InputHandler.inputState.hasAimPoint = (current.HasAimPointCount != _lastHasAimPointCount);
-
         InputHandler.inputState.moveWorldPoint = current.MoveWorldPoint;
         InputHandler.inputState.aimWorldPoint = current.AimWorldPoint;
-
-        // 비교용 카운트 최신화
         _lastLMBCount = current.CastLMBCount;
         _lastQCount = current.CastQCount;
         _lastWCount = current.CastWCount;

@@ -5,20 +5,11 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/00_MainMenu/00_MainMenu.unity
-    guid: d198b8844fa7b0b428305da711f39bc4
-  - enabled: 0
-    path: Assets/01_ThirdPersonCharacter/01_ThirdPersonCharacter.unity
-    guid: 9172143bd00b4ba4d925fa216d9c14d9
-  - enabled: 0
-    path: Assets/02_Platformer/02_Platformer.unity
-    guid: 37d65297c66bca54baa5767f6b02f252
-  - enabled: 0
-    path: Assets/_Scenes/03_Shooter/03_Shooter.unity
-    guid: 71bd13dc7c9a68e4e91e8dafb79988d6
   - enabled: 1
-    path: Assets/_Scenes/03_Shooter/multiplayer.unity
-    guid: 92c22866524ca4a4a82b9e1a22cf0d44
+    path: Assets/_Scenes/TitleScene.unity
+    guid: cb2e85ce99f0946bd87b039760803624
+  - enabled: 1
+    path: Assets/_Scenes/BattleField_Multiplay.unity
+    guid: e8200e105cd03b94a9f3ebdd8b39a505
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

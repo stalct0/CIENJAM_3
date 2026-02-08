@@ -15,6 +15,8 @@ GameObject:
   - component: {fileID: -4146936422773570457}
   - component: {fileID: 8164716495006407844}
   - component: {fileID: 2014159533262732470}
+  - component: {fileID: 1938808475756647684}
+  - component: {fileID: 2021906672467108235}
   m_Layer: 6
   m_Name: Crystal_red
   m_TagString: Untagged
@@ -147,6 +149,7 @@ MonoBehaviour:
   onDestroyedBy:
     m_PersistentCalls:
       m_Calls: []
+  dead: 0
 --- !u!114 &2014159533262732470
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -161,3 +164,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ownerTeam: 2
   access: 1
+--- !u!114 &1938808475756647684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 482211429826805703}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 3132997751
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 2021906672467108235}
+  ForceRemoteRenderTimeframe: 0
+--- !u!114 &2021906672467108235
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 482211429826805703}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stateAuthorityChangeErrorCorrectionDelta: 0.15
+  SyncScale: 0
+  SyncParent: 0
+  _autoAOIOverride: 1
+  DisableSharedModeInterpolation: 0

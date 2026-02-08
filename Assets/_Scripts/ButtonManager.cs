@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class ButtonManager : MonoBehaviour
@@ -21,13 +22,13 @@ public class ButtonManager : MonoBehaviour
     }
     public void StartGame()
     {
-        //UnityEngine.SceneManagement.SceneManager.LoadScene("TGH");
+        SceneManager.LoadScene(1);
     }
 
     public void QuitGame()
     {
-        //UnityEditor.EditorApplication.isPlaying = false;
-        //Application.Quit();
+        UnityEditor.EditorApplication.isPlaying = false;
+        Application.Quit();
     }
 
     public void OpenOptions()

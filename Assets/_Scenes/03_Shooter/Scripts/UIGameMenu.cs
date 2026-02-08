@@ -16,7 +16,7 @@ namespace Starter
 		[Tooltip("Specifies which game mode player should join - e.g. Platformer, ThirdPersonCharacter")]
 		public string GameModeIdentifier;
 		public NetworkRunner RunnerPrefab;
-		public int MaxPlayerCount = 8;
+		public int MaxPlayerCount = 2;
 
 		[Header("Debug")]
 		[Tooltip("For debug purposes it is possible to force single-player game (starts faster)")]
@@ -91,12 +91,13 @@ namespace Starter
 		{
 			if (PanelGroup.gameObject.activeSelf && _runnerInstance == null)
 				return; // Panel cannot be hidden if the game is not running
-
+			if(PanelGroup.gameObject.activeSelf)
 			PanelGroup.gameObject.SetActive(!PanelGroup.gameObject.activeSelf);
 		}
 
 		private void OnEnable()
 		{
+			
 			var nickname = PlayerPrefs.GetString("PlayerName");
 			if (string.IsNullOrEmpty(nickname))
 			{

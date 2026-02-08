@@ -1,135 +1,102 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Fusion; // 퓨전 참조 추가
 
 public class BattleUIManager : MonoBehaviour
 {
     public GameObject Canvas;
-    public GameObject BluePlayer;
-    HealthEX BluePlayerHealth;
-    private UltGauge BlueUlt;
     
-    public GameObject RedPlayer;
-    HealthEX RedPlayerHealth;
+    [Header("Players")]
+    public GameObject BluePlayer; // GameManager/Player 스크립트에서 할당됨
+    public GameObject RedPlayer;  // GameManager/Player 스크립트에서 할당됨
+
+    private HealthEX _blueHealth;
+    private HealthEX _redHealth;
+    private UltGauge _blueUlt;
+
+    [Header("HP Gauges")]
     public Image BlueHPGauge;
     public Image RedHPGauge;
-    public SkillDefinition[] SkillDefs; // 0~2: Skills
-    public Image[] CDImgs; // 0~2: Skill CDs
+
+    [Header("Skills")]
+    public SkillDefinition[] SkillDefs; 
+    public Image[] CDImgs; 
     public TextMeshProUGUI[] CDTexts;
+
+    [Header("Ultimate")]
     public Image UltMask;
     public Image UltGauge;
     public TextMeshProUGUI UltText;
+
+    [Header("Summoner Spells")]
     public GameObject SpellDIcon;
     public GameObject SpellFIcon;
-    public SkillRunner playerRunner;
-    public SummonerSpellRunner spellRunner;
-    float[] coolDowns;
-    bool[] isOnCD;
-    float elapsedTime = 0f;
-    bool isStarted = false;
 
-    void Start()
+    [Header("Runners")]
+    public SkillRunner playerRunner;     // Player.cs에서 할당됨
+    public SummonerSpellRunner spellRunner; // Player.cs에서 할당됨
+
+    private bool _isInitialized = false;
+    private float elapsedTime = 0f;
+
+    // OnEnable 대신, Player가 할당되었는지 체크하는 로직으로 변경
+    private bool CheckAndInit()
     {
-//        SpellDIcon.GetComponent<Image>().sprite = SpellHolder.spellDImage.sprite;
-//        SpellFIcon.GetComponent<Image>().sprite = SpellHolder.spellFImage.sprite;
+        if (_isInitialized) return true;
+        if (BluePlayer == null || RedPlayer == null || playerRunner == null || spellRunner == null) return false;
 
-        BluePlayerHealth = BluePlayer.GetComponentInChildren<HealthEX>();
-        RedPlayerHealth = RedPlayer.GetComponentInChildren<HealthEX>();
+        // 플레이어가 할당된 직후 한 번만 컴포넌트 가져오기
+        _blueHealth = BluePlayer.GetComponentInChildren<HealthEX>();
+        _redHealth = RedPlayer.GetComponentInChildren<HealthEX>();
         
-        BlueUlt = BluePlayer.GetComponentInParent<UltGauge>();
-        if (!BlueUlt) BlueUlt = BluePlayer.GetComponentInChildren<UltGauge>();
-        
-        coolDowns = new float[CDImgs.Length];
-        isOnCD = new bool[CDImgs.Length];
-        UltGauge.fillAmount = 1f;
+        _blueUlt = BluePlayer.GetComponentInParent<UltGauge>();
+        if (!_blueUlt) _blueUlt = BluePlayer.GetComponentInChildren<UltGauge>();
 
-        for (int i = 0; i < CDImgs.Length; i++)
-        {
-            CDImgs[i].fillAmount = 0f;
-            CDTexts[i].text = "";
-            isOnCD[i] = false;
-        }
+        // 초기화 완료
+        _isInitialized = true;
+        Debug.Log("[UI] 모든 플레이어 컴포넌트 연결 완료");
+        return true;
     }
-    
-    /*
-    public void StartCooldown(char skill)
+
+    void Update()
     {
-        switch (skill)
+        // 1. 초기 대기 시간 (게임 시작 연출 등)
+        if (elapsedTime < 10f)
         {
-            case 'Q':
-            case 'q':
-                if (!isOnCD[0])
-                {
-                    coolDowns[0] = SkillDefs[0].cooldown;
-                    CDImgs[0].fillAmount = 1f;
-                    isOnCD[0] = true;
-                }
-                break;
-            case 'W':
-            case 'w':
-                if (!isOnCD[1])
-                {
-                    coolDowns[1] = SkillDefs[1].cooldown;
-                    CDImgs[1].fillAmount = 1f;
-                    isOnCD[1] = true;
-                }
-                break;
-
-            case 'E':
-            case 'e':
-                if (!isOnCD[2])
-                {
-                    coolDowns[2] = SkillDefs[2].cooldown;
-                    CDImgs[2].fillAmount = 1f;
-                    isOnCD[2] = true;
-                }
-                break;
-
-            case 'D':
-                if (!isOnCD[3])
-                {
-                    coolDowns[3] = cooldown;
-                    CDImgs[3].fillAmount = 1f;
-                    isOnCD[3] = true;
-                }
-                break;
-            case 'F':
-                if (!isOnCD[4])
-                {
-                    coolDowns[4] = cooldown;
-                    CDImgs[4].fillAmount = 1f;
-                    isOnCD[4] = true;
-                }
-                break;
-
+            elapsedTime += Time.deltaTime;
+            return;
         }
-    }
-*/
-    void UltGaugeUpdate()
-    {
-        if (BlueUlt != null)
-        {
-            float p = BlueUlt.GaugePercent; // 0~100
-            UltText.text = (p >= 100f) ? "" : Mathf.FloorToInt(p).ToString() + "%";
 
-            UltGauge.fillAmount = (100 - p)/ 100f;
+        // 2. 초기화 확인 (플레이어 할당 대기)
+        if (!CheckAndInit()) return;
 
-            if (UltGauge.fillAmount <= 0)
-            {
-                UltMask.enabled = false;
-                UltText.text = "";
-            }
-        }
+        // 3. 캔버스 활성화
+        if (!Canvas.activeSelf) Canvas.SetActive(true);
+        // 4. 스킬 쿨다운 업데이트 (Runner에서 직접 가져옴)
+        UpdateCdUI(0, SkillSlot.Q);
+        UpdateCdUI(1, SkillSlot.W);
+        UpdateCdUI(2, SkillSlot.E);
+
+        // 5. HP바 업데이트 (HealthEX의 hp가 [Networked]여야 실시간 동기화됨)
+        if (_blueHealth != null) BlueHPGauge.fillAmount = _blueHealth.hp / 100f;
+        if (_redHealth != null) RedHPGauge.fillAmount = _redHealth.hp / 100f;
+
+        // 6. 궁극기 및 소환사 주문 업데이트
+        UltGaugeUpdate();
+        UpdateSpCdUI();
     }
-    
+
     void UpdateCdUI(int idx, SkillSlot slot)
     {
+        if (playerRunner == null) return;
+
         float remain = playerRunner.GetCooldownRemaining(slot);
         float dur = playerRunner.GetCooldownDuration(slot);
 
         if (remain > 0f)
         {
-            CDImgs[idx].fillAmount = remain / dur; // 1 -> 0
+            CDImgs[idx].fillAmount = remain / dur;
             CDTexts[idx].text = Mathf.CeilToInt(remain).ToString();
         }
         else
@@ -141,73 +108,42 @@ public class BattleUIManager : MonoBehaviour
 
     void UpdateSpCdUI()
     {
+        if (spellRunner == null || spellRunner.spellD == null) return;
+
+        // 소환사 주문 쿨다운 (Time.time 대신 퓨전의 Runner.SimulationTime 권장이나 현재 구조 유지)
         float dRemain = spellRunner.cdEnd[SummonerSlot.D] - Time.time;
         float fRemain = spellRunner.cdEnd[SummonerSlot.F] - Time.time;
-        float dDur = spellRunner.spellD.cooldownSeconds;
-        float fDur = spellRunner.spellF.cooldownSeconds;
+        
+        UpdateSingleSpellUI(SpellDIcon, dRemain, spellRunner.spellD.cooldownSeconds);
+        UpdateSingleSpellUI(SpellFIcon, fRemain, spellRunner.spellF.cooldownSeconds);
+    }
 
-        if (dRemain > 0f)
+    private void UpdateSingleSpellUI(GameObject iconObj, float remain, float total)
+    {
+        var img = iconObj.GetComponentInChildren<Image>();
+        var txt = iconObj.GetComponentInChildren<TextMeshProUGUI>();
+
+        if (remain > 0f)
         {
-            SpellDIcon.GetComponentInChildren<Image>().fillAmount = dRemain / dDur;
-            SpellDIcon.GetComponentInChildren<TextMeshProUGUI>().text = Mathf.CeilToInt(dRemain).ToString();
+            img.fillAmount = remain / total;
+            txt.text = Mathf.CeilToInt(remain).ToString();
         }
         else
         {
-            SpellDIcon.GetComponentInChildren<Image>().fillAmount = 0f;
-            SpellDIcon.GetComponentInChildren<TextMeshProUGUI>().text = "";
-        }
-
-        if (fRemain > 0f)
-        {
-            SpellFIcon.GetComponentInChildren<Image>().fillAmount = fRemain / fDur;
-            SpellFIcon.GetComponentInChildren<TextMeshProUGUI>().text = Mathf.CeilToInt(fRemain).ToString();
-        }
-        else
-        {
-            SpellFIcon.GetComponentInChildren<Image>().fillAmount = 0f;
-            SpellFIcon.GetComponentInChildren<TextMeshProUGUI>().text = "";
+            img.fillAmount = 0f;
+            txt.text = "";
         }
     }
 
-    // Update is called once per frame
-    void Update()
+    void UltGaugeUpdate()
     {
-        if (elapsedTime < 10f)
+        if (_blueUlt != null)
         {
-            elapsedTime += Time.deltaTime;
-            return;
-        }
+            float p = _blueUlt.GaugePercent; 
+            UltText.text = (p >= 100f) ? "" : Mathf.FloorToInt(p).ToString() + "%";
+            UltGauge.fillAmount = (100f - p) / 100f;
 
-        if (!isStarted)
-        {
-            isStarted = true;
-            Canvas.SetActive(true);
-        }
-        
-        UpdateCdUI(0, SkillSlot.Q);
-        UpdateCdUI(1, SkillSlot.W);
-        UpdateCdUI(2, SkillSlot.E);
-        
-        BlueHPGauge.fillAmount = BluePlayerHealth.hp / 100f;
-        RedHPGauge.fillAmount = RedPlayerHealth.hp / 100f;
-        
-        UltGaugeUpdate();
-        
-        for (int i = 0; i < CDImgs.Length; i++)
-        {
-            if (isOnCD[i])
-            {
-                CDImgs[i].fillAmount -= Time.deltaTime / SkillDefs[i].cooldown;
-                coolDowns[i] -= Time.deltaTime;
-                CDTexts[i].text = Mathf.CeilToInt(coolDowns[i]).ToString();
-
-                if (coolDowns[i] <= 0f)
-                {
-                    CDImgs[i].fillAmount = 0f;
-                    isOnCD[i] = false;
-                    CDTexts[i].text = "";
-                }
-            }
+            UltMask.enabled = (p < 100f);
         }
     }
 }
