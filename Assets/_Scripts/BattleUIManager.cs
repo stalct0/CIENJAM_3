@@ -47,6 +47,9 @@ public class BattleUIManager : MonoBehaviour
         if (BluePlayer == null || RedPlayer == null || playerRunner == null || spellRunner == null) return false;
 
         // 플레이어가 할당된 직후 한 번만 컴포넌트 가져오기
+        SpellDIcon.GetComponent<Image>().sprite = SpellHolder.spellDImage.sprite;
+        SpellFIcon.GetComponent<Image>().sprite = SpellHolder.spellFImage.sprite;
+
         _blueHealth = BluePlayer.GetComponentInChildren<HealthEX>();
         _redHealth = RedPlayer.GetComponentInChildren<HealthEX>();
         
