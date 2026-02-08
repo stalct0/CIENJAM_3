@@ -8,25 +8,18 @@ public sealed class Player : NetworkBehaviour
     public PlayerInputHandler InputHandler;
     public GameManager GameManager;
 
-    // 1. 체력 네트워크 변수 (UI 동기화용)
+    // 1. 네트워크 동기화 변수들 (HP, 게이지 추가)
     [Networked] public float NetworkedHP { get; set; }
     [Networked] public float NetworkedMaxHP { get; set; } = 100f;
+    [Networked] public float NetworkedUltGauge { get; set; } // 궁극기 게이지 추가
 
-    // 2. 네트워크 입력 구조체 (D, F 키 포함 - 순서 엄수)
     public struct PlayerNetworkInputState : INetworkStruct
     {
-        public int CastLMBCount;
-        public int CastQCount;
-        public int CastWCount;
-        public int CastECount;
-        public int CastRDownCount;
-        public int CastRUpCount;
-        public int CastDCount; // 추가된 소환사 주문 D
-        public int CastFCount; // 추가된 소환사 주문 F
-        public int MoveClickCount;
-        public int HasAimPointCount;
-        public Vector3 MoveWorldPoint;
-        public Vector3 AimWorldPoint;
+        public int CastLMBCount, CastQCount, CastWCount, CastECount;
+        public int CastRDownCount, CastRUpCount;
+        public int CastDCount, CastFCount;
+        public int MoveClickCount, HasAimPointCount;
+        public Vector3 MoveWorldPoint, AimWorldPoint;
     }
 
     [Networked] public PlayerNetworkInputState NetworkedInput { get; set; }
@@ -34,9 +27,11 @@ public sealed class Player : NetworkBehaviour
     private ChangeDetector _changeDetector;
     private bool _isInitialized;
     private bool _identitySetupDone;
+    
+    // 하위 컴포넌트 참조
     private HealthEX _healthComponent;
+    private UltGauge _ultGaugeComponent; 
 
-    // 비교용 로컬 카운트 변수들
     private int _lCount, _qCount, _wCount, _eCount, _rdCount, _ruCount, _dCount, _fCount, _mCount, _hCount;
 
     public override void Spawned()
@@ -44,25 +39,20 @@ public sealed class Player : NetworkBehaviour
         if (InputHandler == null) InputHandler = GetComponentInChildren<PlayerInputHandler>();
         if (InputHandler != null) InputHandler.enabled = false;
         
+        // 컴포넌트 탐색
         _healthComponent = GetComponentInChildren<HealthEX>();
-        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
+        _ultGaugeComponent = GetComponentInChildren<UltGauge>();
         
-        // 스폰 시점의 네트워크 상태를 로컬 카운트에 즉시 반영
+        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
         SyncCountsToCurrent();
         
         GameManager = FindObjectOfType<GameManager>();
-        
-        // 권한자가 초기 체력 설정
         if (HasStateAuthority) NetworkedHP = NetworkedMaxHP;
 
         _isInitialized = true;
     }
 
-    public void Init()
-    {
-        if (!HasStateAuthority) return;
-        SetupIdentityAndUI();
-    }
+    public void Init() { if (HasStateAuthority) SetupIdentityAndUI(); }
 
     private void Update()
     {
@@ -70,15 +60,17 @@ public sealed class Player : NetworkBehaviour
 
         if (HasStateAuthority)
         {
-            // 1. 하드웨어 입력 읽기
             if (Mouse.current != null && Keyboard.current != null)
             {
                 InputHandler.UpdateAimPoint();
                 InputHandler.ReadInputsIntoState();
             }
 
-            // 2. 체력 실시간 브릿지 (Local -> Networked)
+            // 2. [권한자] 로컬 데이터 -> 네트워크 변수로 복사
             if (_healthComponent != null) NetworkedHP = _healthComponent.hp;
+            
+            // 궁극기 게이지 실시간 동기화
+            if (_ultGaugeComponent != null) NetworkedUltGauge = _ultGaugeComponent.GaugePercent;
         }
     }
 
@@ -86,20 +78,16 @@ public sealed class Player : NetworkBehaviour
     {
         if (!_isInitialized) return;
 
-        // 3. 팀 설정 및 UI 연결 (모든 클라이언트)
         if (!HasStateAuthority && !_identitySetupDone && Runner.SessionInfo.PlayerCount >= 2)
-        {
             SetupIdentityAndUI();
-        }
 
-        // 4. 네트워크 변화 감지
+        // 3. 네트워크 변화 감지 및 프록시 적용
         foreach (var change in _changeDetector.DetectChanges(this))
         {
             if (change == nameof(NetworkedInput))
             {
                 if (!HasStateAuthority)
                 {
-                    // [Proxy] 입력 복원 및 실행
                     SyncNetworkInputToProxyHandler();
                     InputHandler.DispatchStateToControllers();
                     InputHandler.ClearOneFrameTriggers();
@@ -108,10 +96,19 @@ public sealed class Player : NetworkBehaviour
             
             if (change == nameof(NetworkedHP))
             {
-                // [Proxy] 체력 동기화
                 if (!HasStateAuthority && _healthComponent != null)
-                {
                     _healthComponent.hp = (int)NetworkedHP;
+            }
+
+            // [프록시] 궁극기 게이지 동기화
+            if (change == nameof(NetworkedUltGauge))
+            {
+                if (!HasStateAuthority && _ultGaugeComponent != null)
+                {
+                    // 프록시의 UltGauge 값을 네트워크 값으로 강제 동기화
+                    // (UltGauge 스크립트 수정 없이 값만 덮어씌움)
+                    var field = typeof(UltGauge).GetField("gauge", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    if (field != null) field.SetValue(_ultGaugeComponent, NetworkedUltGauge);
                 }
             }
         }
@@ -123,8 +120,6 @@ public sealed class Player : NetworkBehaviour
 
         var state = NetworkedInput;
         var s = InputHandler.inputState;
-
-        // 5. 입력을 카운트로 변환하여 네트워크 변수에 기록 (R, D, F 포함)
         if (s.castLMB) state.CastLMBCount++;
         if (s.castQ) state.CastQCount++;
         if (s.castW) state.CastWCount++;
@@ -135,13 +130,10 @@ public sealed class Player : NetworkBehaviour
         if (s.castF) state.CastFCount++;
         if (s.moveClick) state.MoveClickCount++;
         if (s.hasAimPoint) state.HasAimPointCount++;
-        
         state.MoveWorldPoint = s.moveWorldPoint;
         state.AimWorldPoint = s.aimWorldPoint;
-        
         NetworkedInput = state;
 
-        // [Owner] 로컬 컨트롤러 실행
         InputHandler.DispatchStateToControllers();
         InputHandler.ClearOneFrameTriggers();
     }
@@ -160,29 +152,15 @@ public sealed class Player : NetworkBehaviour
     {
         var c = NetworkedInput;
         var s = InputHandler.inputState;
-
-        // 카운트 차이 비교를 통해 bool 상태 복원
-        s.castLMB = (c.CastLMBCount != _lCount);
-        s.castQ = (c.CastQCount != _qCount);
-        s.castW = (c.CastWCount != _wCount);
-        s.castE = (c.CastECount != _eCount);
-        s.castRDown = (c.CastRDownCount != _rdCount);
-        s.castRUp = (c.CastRUpCount != _ruCount);
-        s.castD = (c.CastDCount != _dCount);
-        s.castF = (c.CastFCount != _fCount);
-        s.moveClick = (c.MoveClickCount != _mCount);
-        s.hasAimPoint = (c.HasAimPointCount != _hCount);
-        
-        s.moveWorldPoint = c.MoveWorldPoint;
-        s.aimWorldPoint = c.AimWorldPoint;
-
+        s.castLMB = (c.CastLMBCount != _lCount); s.castQ = (c.CastQCount != _qCount);
+        s.castW = (c.CastWCount != _wCount); s.castE = (c.CastECount != _eCount);
+        s.castRDown = (c.CastRDownCount != _rdCount); s.castRUp = (c.CastRUpCount != _ruCount);
+        s.castD = (c.CastDCount != _dCount); s.castF = (c.CastFCount != _fCount);
+        s.moveClick = (c.MoveClickCount != _mCount); s.hasAimPoint = (c.HasAimPointCount != _hCount);
+        s.moveWorldPoint = c.MoveWorldPoint; s.aimWorldPoint = c.AimWorldPoint;
         InputHandler.inputState = s;
-
-        // 로컬 카운트 최신화 (다음 프레임 비교용)
-        _lCount = c.CastLMBCount; _qCount = c.CastQCount;
-        _wCount = c.CastWCount; _eCount = c.CastECount;
-        _rdCount = c.CastRDownCount; _ruCount = c.CastRUpCount;
-        _dCount = c.CastDCount; _fCount = c.CastFCount;
+        _lCount = c.CastLMBCount; _qCount = c.CastQCount; _wCount = c.CastWCount; _eCount = c.CastECount;
+        _rdCount = c.CastRDownCount; _ruCount = c.CastRUpCount; _dCount = c.CastDCount; _fCount = c.CastFCount;
         _mCount = c.MoveClickCount; _hCount = c.HasAimPointCount;
     }
 
@@ -201,13 +179,11 @@ public sealed class Player : NetworkBehaviour
                 identity.SetIdentity(1, TeamId.B, 1);
                 GameManager.BattleUIManager.BluePlayer = InputHandler.gameObject;
             }
-            // 6. UI 매니저에 Runner 연결 (실시간 쿨다운/시간 동기화)
             GameManager.BattleUIManager.playerRunner = InputHandler.skillRunner;
             GameManager.BattleUIManager.spellRunner = InputHandler.summoner;
         }
         else
         {
-            // 프록시 팀 설정
             if (GameManager.player == 0) {
                 identity.SetIdentity(1, TeamId.B, 1);
                 GameManager.BattleUIManager.BluePlayer = InputHandler.gameObject;
