@@ -1947,7 +1947,6 @@ GameObject:
   - component: {fileID: 5800096760494993295}
   - component: {fileID: 4064492955579946359}
   - component: {fileID: 6458015876695521618}
-  - component: {fileID: 5436631581501898666}
   m_Layer: 6
   m_Name: Storm
   m_TagString: Untagged
@@ -2319,30 +2318,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 80
   m_CollisionDetection: 0
---- !u!114 &5436631581501898666
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5767555216201706578}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b2bcfc91c468a4549b18bb4630a6e698, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  requireKnockbackToStartFall: 0
-  agent: {fileID: 1489115543160544649}
-  knockback: {fileID: 8195036980223707398}
-  health: {fileID: 1665426670511744125}
-  rb: {fileID: 6458015876695521618}
-  respawnInsteadOfDeath: 0
-  respawnPoint: {fileID: 0}
-  outPushSpeed: 4
-  downPushSpeed: 0
-  maxHorizontalSpeed: 6
-  towerCenter: {fileID: 0}
-  isFalling: 0
 --- !u!1 &5777835331652232917
 GameObject:
   m_ObjectHideFlags: 0
