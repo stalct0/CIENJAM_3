@@ -32,7 +32,17 @@ public class AudioManager3D : MonoBehaviour
         }
         WarmPool();
     }
+    public void SetBgmVolume(float v01)
+    {
+        if (!bgmSource) return;
+        bgmSource.volume = Mathf.Clamp01(v01);
+    }
 
+    public float GetBgmVolume()
+    {
+        return bgmSource ? bgmSource.volume : 1f;
+    }
+    
     private void WarmPool()
     {
         for (int i = 0; i < initialPoolSize; i++)

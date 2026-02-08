@@ -10,9 +10,28 @@ public class ButtonManager : MonoBehaviour
     public GameObject SpellDButton;
     public GameObject SpellFButton;
     public Image[] SpellImages; // 0: Flash, 1: Ghost, 2: Barrier, 3: Exhaust
-
+    [SerializeField] private Scrollbar bgmScrollbar;
+    [SerializeField] private string bgmKey = "BGM_VOL";
     void Start()
     {
+        if (!bgmScrollbar) return;
+
+        
+        float defaultValue = 0.3f;
+
+        // PlayerPrefs가 있으면 그걸 우선
+        float value = PlayerPrefs.HasKey(bgmKey)
+            ? PlayerPrefs.GetFloat(bgmKey)
+            : defaultValue;
+
+        // 강제로 세팅
+        bgmScrollbar.SetValueWithoutNotify(value);
+
+        if (AudioManager3D.I != null)
+            AudioManager3D.I.SetBgmVolume(value);
+
+        // 이벤트 등록은 Start에서 하는 게 안전
+        bgmScrollbar.onValueChanged.AddListener(OnBgmChanged);
         OptionsMenu.SetActive(false);
         DSpellMenu.SetActive(false);
         FSpellMenu.SetActive(false);
@@ -20,6 +39,21 @@ public class ButtonManager : MonoBehaviour
         SpellHolder.spellF = SummonerSpellType.Ghost;
         UpdateSpellImages();
     }
+    private void OnDestroy()
+    {
+        if (bgmScrollbar)
+            bgmScrollbar.onValueChanged.RemoveListener(OnBgmChanged);
+    }
+
+    private void OnBgmChanged(float v01)
+    {
+        if (AudioManager3D.I != null)
+            AudioManager3D.I.SetBgmVolume(v01);
+
+        PlayerPrefs.SetFloat(bgmKey, v01);
+        PlayerPrefs.Save();
+    }
+    
     public void StartGame()
     {
         UnityEngine.SceneManagement.SceneManager.LoadScene("TGH");
