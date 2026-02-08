@@ -1,5 +1,11 @@
 using UnityEngine;
 
+public enum EffectSpawnType
+{
+    OneShot,   // 한 번 생성
+    Follow     // 대상에 붙어서 지속
+}
+
 [CreateAssetMenu(menuName = "Game/Summoner Spell")]
 public class SummonerSpellDefinition : ScriptableObject
 {
@@ -24,4 +30,13 @@ public class SummonerSpellDefinition : ScriptableObject
     [Header("Barrier")]
     public float barrierDuration = 3f;
     public int barrierAmount = 16;
+    
+    [Header("VFX")]
+    public GameObject vfxOneShotPrefab;   // Flash 같은 1회
+    public GameObject vfxFollowPrefab;    // Ghost/Barrier/Exhaust 같은 지속(대상에 부착)
+    public Vector3 vfxOffset; // 대상 기준 로컬 오프셋
+    
+    
+    
+    
 }

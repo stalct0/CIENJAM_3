@@ -3420,6 +3420,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7fd5f561022e34233b36c0706fcecea5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Canvas: {fileID: 0}
   BluePlayer: {fileID: 364419884}
   RedPlayer: {fileID: 1625407084}
   BlueHPGauge: {fileID: 735208827}
@@ -5357,6 +5358,18 @@ PrefabInstance:
       propertyPath: cam
       value: 
       objectReference: {fileID: 330585545}
+    - target: {fileID: 2049295009344908538, guid: a0679adf50108c245837ec4a9e8684a3,
+        type: 3}
+      propertyPath: spellD
+      value: 
+      objectReference: {fileID: 11400000, guid: 1786a64127b0035478df0e404d28cda8,
+        type: 2}
+    - target: {fileID: 2049295009344908538, guid: a0679adf50108c245837ec4a9e8684a3,
+        type: 3}
+      propertyPath: spellF
+      value: 
+      objectReference: {fileID: 11400000, guid: 2218d0da2847d484a9582b0021c7323d,
+        type: 2}
     - target: {fileID: 4840284959520622999, guid: a0679adf50108c245837ec4a9e8684a3,
         type: 3}
       propertyPath: m_LocalPosition.x

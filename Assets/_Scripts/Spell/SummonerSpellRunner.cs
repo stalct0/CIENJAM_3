@@ -75,12 +75,12 @@ public class SummonerSpellRunner : MonoBehaviour
     // =========================
     private bool CastFlash(SummonerSpellDefinition def)
     {
-        Debug.Log($"[Flash] hasAim={hasAimPoint} aim={aimWorldPoint}");
-
         if (!hasAimPoint) return false;
 
-        Vector3 p = aimWorldPoint;
+        // ✅ 점멸 사용한 자리에서 1회 이펙트
+        SpawnOneShotVFX(def.vfxOneShotPrefab, transform.position + def.vfxOffset);
 
+        Vector3 p = aimWorldPoint;
         float maxRange = flashDistance * def.flashRangeMultiplier;
 
         Vector3 from = transform.position;
@@ -90,14 +90,12 @@ public class SummonerSpellRunner : MonoBehaviour
         Vector3 delta = to - from;
         delta.y = 0f;
 
-        Debug.Log($"[Flash] from={from} to={to} dist={delta.magnitude} maxRange={maxRange}");
-
         if (delta.sqrMagnitude < 0.01f) return false;
 
         if (delta.magnitude > maxRange)
             to = from + delta.normalized * maxRange;
 
-        var agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
+        var agent = GetComponent<NavMeshAgent>();
         if (agent)
         {
             bool ok = agent.Warp(to);
@@ -121,7 +119,7 @@ public class SummonerSpellRunner : MonoBehaviour
         var ghost = GetComponent<GhostBuff>();
         if (!ghost) ghost = gameObject.AddComponent<GhostBuff>();
 
-        ghost.Apply(def.ghostDuration, def.moveSpeedBonusPercent);
+        ghost.Apply(def.ghostDuration, def.moveSpeedBonusPercent, def.vfxFollowPrefab, def.vfxOffset);
         return true;
     }
 
@@ -136,7 +134,7 @@ public class SummonerSpellRunner : MonoBehaviour
         var ex = target.GetComponent<ExhaustDebuff>();
         if (!ex) ex = target.gameObject.AddComponent<ExhaustDebuff>();
 
-        ex.Apply(def.exhaustDuration, def.exhaustMoveSpeedMultiplier, def.exhaustDamageMultiplier);
+        ex.Apply(def.exhaustDuration, def.exhaustMoveSpeedMultiplier, def.exhaustDamageMultiplier, def.vfxFollowPrefab, def.vfxOffset);
         return true;
     }
 
@@ -176,7 +174,22 @@ public class SummonerSpellRunner : MonoBehaviour
         var shield = GetComponent<ShieldBuff>();
         if (!shield) shield = gameObject.AddComponent<ShieldBuff>();
 
-        shield.Apply(def.barrierDuration, def.barrierAmount);
+        shield.Apply(def.barrierDuration, def.barrierAmount, def.vfxFollowPrefab, def.vfxOffset);
         return true;
+    }
+    
+    private void SpawnOneShotVFX(GameObject prefab, Vector3 worldPos)
+    {
+        if (!prefab) return;
+        Instantiate(prefab, worldPos, Quaternion.identity);
+    }
+
+    private GameObject SpawnFollowVFX(GameObject prefab, Transform target, Vector3 localOffset)
+    {
+        if (!prefab || !target) return null;
+        var go = Instantiate(prefab, target);
+        go.transform.localPosition = localOffset;
+        go.transform.localRotation = Quaternion.identity;
+        return go;
     }
 }
