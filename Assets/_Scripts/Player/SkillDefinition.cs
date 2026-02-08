@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public enum VfxTiming { OnStart, OnHit, OnEnd }
+public enum VfxTiming { OnStart, OnHit, OnEnd, OnCharging }
 public enum VfxAttach { None, PlayerRoot, SwordTip, SwordBase, Custom }
 
 [System.Serializable]

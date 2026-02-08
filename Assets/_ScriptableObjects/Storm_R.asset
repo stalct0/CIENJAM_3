@@ -77,3 +77,19 @@ MonoBehaviour:
     localEuler: {x: -50, y: 90, z: 0}
     lifeTime: 2
     follow: 0
+  - timing: 3
+    prefab: {fileID: 8145502431507700120, guid: 334583c84d94baf489970eb14e95d094,
+      type: 3}
+    attachTo: 1
+    customSocketName: 
+    localPos: {x: 0, y: 0, z: 0}
+    localEuler: {x: 0, y: 0, z: 0}
+    lifeTime: 0
+    follow: 0
+  sfxClip: {fileID: 8300000, guid: 7e9d1f96a3dcd284296e97ac98486a14, type: 3}
+  sfxVolume: 1
+  sfxSpatialBlend: 1
+  sfxMinDistance: 1.5
+  sfxMaxDistance: 25
+  sfxPitch: 1
+  sfxRandomPitch: 0.05

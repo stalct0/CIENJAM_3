@@ -2229,8 +2229,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b34e97db96a31f4491fb5efb3e75f32, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spellD: {fileID: 11400000, guid: 6cc6686685d3aa2409599cad3b58ed8d, type: 2}
-  spellF: {fileID: 11400000, guid: b821603fa7726a7438357eb1e61279fc, type: 2}
+  spellD: {fileID: 11400000, guid: 1786a64127b0035478df0e404d28cda8, type: 2}
+  spellF: {fileID: 11400000, guid: 2218d0da2847d484a9582b0021c7323d, type: 2}
   cam: {fileID: 0}
   groundMask:
     serializedVersion: 2
