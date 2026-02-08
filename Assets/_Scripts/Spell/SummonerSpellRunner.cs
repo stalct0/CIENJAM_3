@@ -4,6 +4,11 @@ using UnityEngine.AI;
 
 public class SummonerSpellRunner : MonoBehaviour
 {
+    [SerializeField] SummonerSpellDefinition flash;
+    [SerializeField] SummonerSpellDefinition ghost;
+    [SerializeField] SummonerSpellDefinition exhaust;
+    [SerializeField] SummonerSpellDefinition barrier;
+
     [Header("Slots (assigned before game start; for now drag in inspector)")]
     public SummonerSpellDefinition spellD;
     public SummonerSpellDefinition spellF;
@@ -33,8 +38,43 @@ public class SummonerSpellRunner : MonoBehaviour
         if (!cam) cam = Camera.main;
         if (!knockback) knockback = GetComponent<KnockbackController>();
 
-        spellD.type = SpellHolder.spellD;
-        spellF.type = SpellHolder.spellF;
+        switch (SpellHolder.spellD)
+        {
+            case SummonerSpellType.Flash:
+                spellD = flash;
+                break;
+            case SummonerSpellType.Ghost:
+                spellD = ghost;
+                break;
+            case SummonerSpellType.Exhaust:
+                spellD = exhaust;
+                break;
+            case SummonerSpellType.Barrier:
+                spellD = barrier;
+                break;
+            default:
+                spellD = null;
+                break;
+        }
+
+        switch (SpellHolder.spellF)
+        {
+            case SummonerSpellType.Flash:
+                spellF = flash;
+                break;
+            case SummonerSpellType.Ghost:
+                spellF = ghost;
+                break;
+            case SummonerSpellType.Exhaust:
+                spellF = exhaust;
+                break;
+            case SummonerSpellType.Barrier:
+                spellF = barrier;
+                break;
+            default:
+                spellF = null;
+                break;
+        }
 
         cdEnd[SummonerSlot.D] = 0f;
         cdEnd[SummonerSlot.F] = 0f;
