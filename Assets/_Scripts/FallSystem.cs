@@ -17,8 +17,9 @@ public class FallSystem : MonoBehaviour
     public bool respawnInsteadOfDeath = false;
     public Transform respawnPoint;
     
-    [SerializeField] private float outPushDistance = 0.6f; // 바깥으로 살짝
-    [SerializeField] private float outPushUp = 0.05f;      // 바닥/벽 끼임 방지용 Y 보정(아주 작게)
+    [SerializeField] private float outPushSpeed = 4.0f;  // 바깥으로 튕기는 속도
+    [SerializeField] private float downPushSpeed = 2.5f; // 아래로 떨어지게 보정
+    [SerializeField] private float maxHorizontalSpeed = 6.0f;
     
     public Transform towerCenter;
     
@@ -78,21 +79,6 @@ public class FallSystem : MonoBehaviour
                 return;
         }
         
-        Vector3 center = towerCenter != null
-            ? towerCenter.position
-            : zone.transform.root.position; // 보험용
-
-        Vector3 dir = transform.position - center;
-        dir.y = 0f;
-
-        if (dir.sqrMagnitude < 0.0001f)
-            dir = transform.forward;
-
-        dir.Normalize();
-
-    // 바깥으로 살짝 튕김
-        transform.position += dir * outPushDistance + Vector3.up * outPushUp;
-        
         // 낙하 시작: 넉백이 agent 재부착하지 못하게 정리
         if (knockback != null)
         {
@@ -111,11 +97,37 @@ public class FallSystem : MonoBehaviour
             agent.enabled = false;
         }
 
-        // Rigidbody 낙하 시작
         if (rb)
         {
             rb.isKinematic = false;
             rb.useGravity = true;
+
+            // ✅ 바깥 방향 계산 (타워 중심 기준)
+            Vector3 center = towerCenter ? towerCenter.position : zone.transform.root.position;
+            Vector3 outDir = (transform.position - center);
+            outDir.y = 0f;
+
+            if (outDir.sqrMagnitude < 0.0001f)
+                outDir = transform.forward;
+            outDir.Normalize();
+
+            // ✅ 순간이동 대신 "속도"로 튕김
+            Vector3 v = rb.linearVelocity;
+
+            // 기존 속도와 섞고 싶으면 유지, 싫으면 덮어써도 됨
+            Vector3 horizontal = outDir * outPushSpeed;
+
+            // 너무 과하면 clamp
+            if (horizontal.magnitude > maxHorizontalSpeed)
+                horizontal = horizontal.normalized * maxHorizontalSpeed;
+
+            v.x = horizontal.x;
+            v.z = horizontal.z;
+
+            // 아래로도 살짝 눌러서 확실히 낙하가 시작되게
+            v.y = Mathf.Min(v.y, -downPushSpeed);
+
+            rb.linearVelocity = v;
         }
     }
 

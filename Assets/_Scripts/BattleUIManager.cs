@@ -27,8 +27,8 @@ public class BattleUIManager : MonoBehaviour
 
     void Start()
     {
-        SpellDIcon.GetComponent<Image>().sprite = SpellHolder.spellDImage.sprite;
-        SpellFIcon.GetComponent<Image>().sprite = SpellHolder.spellFImage.sprite;
+//        SpellDIcon.GetComponent<Image>().sprite = SpellHolder.spellDImage.sprite;
+//        SpellFIcon.GetComponent<Image>().sprite = SpellHolder.spellFImage.sprite;
 
         BluePlayerHealth = BluePlayer.GetComponentInChildren<HealthEX>();
         RedPlayerHealth = RedPlayer.GetComponentInChildren<HealthEX>();
