@@ -451,6 +451,20 @@ public class SkillRunner : MonoBehaviour
         ResetToIdle(current);
     }
 
+    public void AnimEvent_Sfx()
+    {    
+        // 캐스팅 중이 아닐 때 호출되면 무시
+        if (state != State.Casting) return;
+
+        // current가 없으면 무시
+        if (current == null) return;
+
+        // AudioManager가 없으면 무시(혹은 로그)
+        if (AudioManager3D.I == null) return;
+        AudioManager3D.I.PlaySkillSfx(current, transform.position);
+    }
+    
+
     // =========================================================
     // Reset / Movement
     // =========================================================
