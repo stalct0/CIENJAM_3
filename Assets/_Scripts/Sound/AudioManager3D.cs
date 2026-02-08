@@ -13,6 +13,16 @@ public class AudioManager3D : MonoBehaviour
 
     [Header("BGM")]
     [SerializeField] private AudioSource bgmSource;
+    public void SetBgmVolume(float v01)
+    {
+        if (!bgmSource) return;
+        bgmSource.volume = Mathf.Clamp01(v01);
+    }
+
+    public float GetBgmVolume()
+    {
+        return bgmSource ? bgmSource.volume : 1f;
+    }
     
     private readonly Queue<AudioSource> pool = new();
     private readonly Dictionary<(SfxId, Transform), AudioSource> followLoops = new();
