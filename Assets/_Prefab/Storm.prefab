@@ -2175,9 +2175,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   agent: {fileID: 1489115543160544649}
-  disableAgentDuringKnockback: 1
-  reattachSampleRadius: 2
-  navMeshAreaMask: -1
 --- !u!114 &3334030694401913209
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2272,7 +2269,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9f187ae610e51b44b3aaf3e71084b1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gauge: 0
+  gauge: 48.9
 --- !u!114 &4064492955579946359
 MonoBehaviour:
   m_ObjectHideFlags: 0
