@@ -77,3 +77,10 @@ MonoBehaviour:
     localEuler: {x: 0, y: 30, z: 0}
     lifeTime: 1
     follow: 0
+  sfxClip: {fileID: 8300000, guid: 6064f1e48dc4dc24b97792b8d2bc592b, type: 3}
+  sfxVolume: 1
+  sfxSpatialBlend: 1
+  sfxMinDistance: 1.5
+  sfxMaxDistance: 25
+  sfxPitch: 1
+  sfxRandomPitch: 0.05

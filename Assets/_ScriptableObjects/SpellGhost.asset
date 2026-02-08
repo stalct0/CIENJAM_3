@@ -23,3 +23,7 @@ MonoBehaviour:
   exhaustDamageMultiplier: 0.5
   barrierDuration: 3
   barrierAmount: 16
+  vfxOneShotPrefab: {fileID: 0}
+  vfxFollowPrefab: {fileID: 9027514048236820045, guid: effb650189dc5714e9e9801b1cfb3991,
+    type: 3}
+  vfxOffset: {x: 0, y: 0, z: 0}

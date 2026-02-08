@@ -32,6 +32,22 @@ public class SkillRunner : MonoBehaviour
     public Transform swordBase;
 
     public WeaponEquipper weaponEquipper;
+    
+    [ContextMenu("VFX/Clear All Pools")]
+    public void ClearAllVfxPools()
+    {
+        foreach (var kv in pool)
+        {
+            var q = kv.Value;
+            while (q.Count > 0)
+            {
+                var inst = q.Dequeue();
+                if (inst) Destroy(inst);
+            }
+        }
+        pool.Clear();
+        prefabBaseScale.Clear();
+    }
 
     // ===== Aim point from input =====
     private bool hasAimPoint;
@@ -53,7 +69,9 @@ public class SkillRunner : MonoBehaviour
     private Vector3 chargeAimPoint;
     private float charge01;                  // 0~1 (차지 중)
     private float releasedCharge01;          // Release 시점에 고정된 값
-
+    
+    // ===== Charge loop VFX (persistent while charging) =====
+    private readonly List<(GameObject prefab, GameObject inst)> chargeVfxLive = new();
     public bool IsCasting => state == State.Casting;
     public bool IsCharging => state == State.Charging;
     public bool IsBusy => state != State.Idle;   // Turning/Charging/Casting 전부 Busy
@@ -268,6 +286,8 @@ public class SkillRunner : MonoBehaviour
         if (weaponEquipper && def.overrideWeaponPose && def.weaponPoseApplyTiming == VfxTiming.OnStart)
             weaponEquipper.ApplyWeaponOffset(def.weaponLocalPosOffset, def.weaponLocalEulerOffset);
 
+        StartChargeLoopVfx(def);
+        
         // Down/Up 같은 프레임이면 즉시 발동(차지값 0으로)
         if (releaseImmediately)
         {
@@ -300,6 +320,7 @@ public class SkillRunner : MonoBehaviour
 
     private void EndChargeAndFire()
     {
+        StopChargeLoopVfx();
         if (current == null) { state = State.Idle; return; }
 
         var def = current;
@@ -473,6 +494,8 @@ public class SkillRunner : MonoBehaviour
         StopCastMoveIfRunning();
         castMoveStartedThisCast = false;
         castMoveLock = false;
+     
+        StopChargeLoopVfx();
         
         var defense = GetComponent<DefenseController>();
         if (defense) defense.externalKnockbackImmune = false;
@@ -833,4 +856,96 @@ public class SkillRunner : MonoBehaviour
         if (!map.TryGetValue(slot, out var def) || def == null) return 1f;
         return Mathf.Max(0.01f, def.cooldown);
     }
+    private void StartChargeLoopVfx(SkillDefinition def)
+{
+    StopChargeLoopVfx(); // 중복 방지
+
+    if (def == null || def.vfx == null) return;
+
+    float vfxScaleMul = EvaluateVfxScale(def, CurrentCharge01);
+
+    for (int i = 0; i < def.vfx.Count; i++)
+    {
+        var v = def.vfx[i];
+        if (v == null || v.prefab == null) continue;
+        if (v.timing != VfxTiming.OnCharging) continue;
+
+        Transform socket = ResolveSocket(v.attachTo, v.customSocketName);
+
+        Vector3 pos;
+        Quaternion rot;
+
+        if (socket != null)
+        {
+            rot = socket.rotation * Quaternion.Euler(v.localEuler);
+            pos = socket.TransformPoint(v.localPos);
+        }
+        else
+        {
+            rot = transform.rotation * Quaternion.Euler(v.localEuler);
+            pos = transform.TransformPoint(v.localPos);
+        }
+
+        GameObject inst = SpawnFromPool(v.prefab, pos, rot);
+
+        if (v.follow && socket != null)
+        {
+            inst.transform.SetParent(socket, worldPositionStays: false);
+            inst.transform.localPosition = v.localPos;
+            inst.transform.localRotation = Quaternion.Euler(v.localEuler);
+        }
+        else
+        {
+            inst.transform.SetParent(null);
+        }
+
+        if (!prefabBaseScale.TryGetValue(v.prefab, out var baseScale))
+        {
+            baseScale = v.prefab.transform.localScale;
+            prefabBaseScale[v.prefab] = baseScale;
+        }
+
+        // 차지 스케일 반영(원하면)
+        inst.transform.localScale = baseScale * vfxScaleMul;
+
+        // lifeTime으로 반환하지 않고 "차지 끝날 때" 수동으로 반환
+        chargeVfxLive.Add((v.prefab, inst));
+    }
+}
+
+private void UpdateChargeLoopVfxScale(SkillDefinition def)
+{
+    if (def == null) return;
+    if (chargeVfxLive.Count == 0) return;
+
+    float vfxScaleMul = EvaluateVfxScale(def, CurrentCharge01);
+
+    for (int i = 0; i < chargeVfxLive.Count; i++)
+    {
+        var (prefab, inst) = chargeVfxLive[i];
+        if (!inst) continue;
+
+        if (!prefabBaseScale.TryGetValue(prefab, out var baseScale))
+        {
+            baseScale = prefab.transform.localScale;
+            prefabBaseScale[prefab] = baseScale;
+        }
+
+        inst.transform.localScale = baseScale * vfxScaleMul;
+    }
+}
+
+private void StopChargeLoopVfx()
+{
+    if (chargeVfxLive.Count == 0) return;
+
+    for (int i = 0; i < chargeVfxLive.Count; i++)
+    {
+        var (prefab, inst) = chargeVfxLive[i];
+        if (inst) ReturnToPool(prefab, inst);
+    }
+
+    chargeVfxLive.Clear();
+}
+
 }
