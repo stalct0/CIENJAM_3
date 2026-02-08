@@ -255,6 +255,8 @@ MonoBehaviour:
   UltMask: {fileID: 1898129985}
   UltGauge: {fileID: 1926175190}
   UltText: {fileID: 449731998}
+  SpellDIcon: {fileID: 0}
+  SpellFIcon: {fileID: 0}
   playerRunner: {fileID: 2874659455893597575}
 --- !u!4 &180165861
 Transform:
@@ -2526,6 +2528,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1022244972
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1022244973}
+  m_Layer: 0
+  m_Name: TowerCenter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1022244973
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1022244972}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.38, y: 0, z: -4.04}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1065767777
 GameObject:
   m_ObjectHideFlags: 0
@@ -4441,6 +4474,16 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5436631581501898666, guid: a0679adf50108c245837ec4a9e8684a3,
+        type: 3}
+      propertyPath: towerCenter
+      value: 
+      objectReference: {fileID: 1022244973}
+    - target: {fileID: 5436631581501898666, guid: a0679adf50108c245837ec4a9e8684a3,
+        type: 3}
+      propertyPath: outPushDistance
+      value: 1.5
+      objectReference: {fileID: 0}
     - target: {fileID: 5767555216201706578, guid: a0679adf50108c245837ec4a9e8684a3,
         type: 3}
       propertyPath: m_Name
@@ -4491,3 +4534,4 @@ SceneRoots:
   - {fileID: 1386499333}
   - {fileID: 1988108820}
   - {fileID: 1005446500}
+  - {fileID: 1022244973}

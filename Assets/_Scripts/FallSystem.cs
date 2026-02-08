@@ -16,7 +16,12 @@ public class FallSystem : MonoBehaviour
     [Header("Respawn optional")]
     public bool respawnInsteadOfDeath = false;
     public Transform respawnPoint;
-
+    
+    [SerializeField] private float outPushDistance = 0.6f; // 바깥으로 살짝
+    [SerializeField] private float outPushUp = 0.05f;      // 바닥/벽 끼임 방지용 Y 보정(아주 작게)
+    
+    public Transform towerCenter;
+    
     public bool isFalling = false;
 
     private void Awake()
@@ -72,6 +77,21 @@ public class FallSystem : MonoBehaviour
             if (knockback == null || !knockback.IsLocked)
                 return;
         }
+        
+        Vector3 center = towerCenter != null
+            ? towerCenter.position
+            : zone.transform.root.position; // 보험용
+
+        Vector3 dir = transform.position - center;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.0001f)
+            dir = transform.forward;
+
+        dir.Normalize();
+
+    // 바깥으로 살짝 튕김
+        transform.position += dir * outPushDistance + Vector3.up * outPushUp;
         
         // 낙하 시작: 넉백이 agent 재부착하지 못하게 정리
         if (knockback != null)
