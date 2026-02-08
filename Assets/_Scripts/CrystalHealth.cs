@@ -21,7 +21,7 @@ public class CrystalHealth : MonoBehaviour, IDamageable
     public class DestroyedEvent : UnityEvent<GameObject> { }
     public DestroyedEvent onDestroyedBy;
 
-    private bool dead;
+    public bool dead;
 
     private void Awake()
     {
@@ -56,6 +56,7 @@ public class CrystalHealth : MonoBehaviour, IDamageable
             // ✅ 외부에 "누가 부쉈는지" 알림 (보상은 외부가 처리)
             onDestroyedBy?.Invoke(info.attacker);
 
+            
             if (destroyOnZero)
             {
                 if (destroyDelay <= 0f) Destroy(gameObject);
