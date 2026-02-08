@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9db9d2cbe3296af44972a34225f0474e, type: 3}
   m_Name: GuardAttackLogic
   m_EditorClassIdentifier: 
-  range: 2
-  radius: 1.2
-  angleDeg: 90
+  range: 1
+  radius: 1
+  angleDeg: 150
   targetMask:
     serializedVersion: 2
     m_Bits: 64
@@ -22,4 +22,3 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 0
-  damage: 10

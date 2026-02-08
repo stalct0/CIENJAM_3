@@ -48,6 +48,12 @@ public class SkillDefinition : ScriptableObject
     [Header("Damage")]
     public int baseDamage = 10;   // 일반 스킬용
 
+    [Header("Guard Bypass")]
+    public GuardBypassType guardBypass = GuardBypassType.None;
+
+    [Range(0f, 1f)]
+    public float guardBypassFactor = 0.5f; // Partial일 때만 사용
+    
     [Header("Charge Damage (Charge Skill Only)")]
     public bool useChargeDamage = false;
     public int minChargeDamage = 10;
@@ -96,4 +102,17 @@ public class SkillDefinition : ScriptableObject
     
     [Header("VFX")]
     public List<VfxSpawn> vfx = new List<VfxSpawn>();
+    
+    [Header("SFX (Single Event)")]
+    public AudioClip sfxClip;
+    [Range(0f, 1f)] public float sfxVolume = 1f;
+
+    [Header("SFX 3D")]
+    [Range(0f, 1f)] public float sfxSpatialBlend = 1f; // 1 = 3D
+    public float sfxMinDistance = 1.5f;
+    public float sfxMaxDistance = 25f;
+
+    [Header("SFX Pitch")]
+    [Range(0.25f, 3f)] public float sfxPitch = 1f;
+    [Range(0f, 1f)] public float sfxRandomPitch = 0.05f;
 }

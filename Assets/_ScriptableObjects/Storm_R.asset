@@ -14,13 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   slot: 4
   cooldown: 2
-  baseDamage: 10
+  baseDamage: 20
+  guardBypass: 2
+  guardBypassFactor: 0.5
   useChargeDamage: 1
-  minChargeDamage: 10
-  maxChargeDamage: 30
+  minChargeDamage: 20
+  maxChargeDamage: 120
   animatorTrigger: Skill_R_Attack
   lockMovement: 1
-  logic: {fileID: 11400000, guid: 7cf62c4530bdd2b4b90e68df3338b656, type: 2}
+  logic: {fileID: 11400000, guid: ed1eeb45da8db6544a89585e117cf9b7, type: 2}
   requireFacing: 1
   turnSpeedDegPerSec: 1500
   facingToleranceDeg: 6

@@ -74,6 +74,10 @@ public class SkillRunner : MonoBehaviour
     private readonly Dictionary<string, Transform> socketCache = new();
     private readonly Dictionary<GameObject, Vector3> prefabBaseScale = new();
 
+    //Debug
+    public SkillDefinition Debug_CurrentSkill => current;
+    public bool Debug_HasCurrentSkill => current != null;
+    
     private void Awake()
     {
         if (!animator) animator = GetComponentInChildren<Animator>();
@@ -135,7 +139,17 @@ public class SkillRunner : MonoBehaviour
 
         // 쿨타임 체크: 차지든 일반이든 "시작 자체"를 막음
         if (Time.time < cdEnd[slot]) return false;
+        
+        if (slot == SkillSlot.R)
+        {
+            var ult = GetComponentInParent<UltGauge>();
+            if (ult == null) ult = GetComponent<UltGauge>();
 
+            if (ult == null || !ult.IsFull)
+                return false; // 100% 아니면 R 못 씀
+            
+        }
+        
         pendingAimPoint = GetMouseGroundPoint();
 
         // 선회 필요하면 Turning으로 들어감
@@ -291,6 +305,17 @@ public class SkillRunner : MonoBehaviour
         var def = current;
         var slot = currentSlot;
         
+        if (slot == SkillSlot.R)
+        {
+            var ult = GetComponentInParent<UltGauge>();
+            if (ult == null) ult = GetComponent<UltGauge>();
+            if (ult == null || !ult.TryConsumeFull())
+            {
+                ResetToIdle(def);
+                return;
+            }
+        }
+        
         var defense = GetComponent<DefenseController>();
         if (defense && def.slot == SkillSlot.R)
             defense.externalKnockbackImmune = false;
@@ -352,6 +377,14 @@ public class SkillRunner : MonoBehaviour
         if (shouldStopAgent)
             StopAgentImmediate();
 
+        if (slot == SkillSlot.R)
+        {
+            var ult = GetComponentInParent<UltGauge>();
+            if (ult == null) ult = GetComponent<UltGauge>();
+            if (ult == null || !ult.TryConsumeFull())
+                return; // 가득 아니면 발동 취소
+        }
+        
         def.logic.OnStart(this, def);
 
         if (!string.IsNullOrEmpty(def.animatorTrigger))
@@ -417,6 +450,20 @@ public class SkillRunner : MonoBehaviour
 
         ResetToIdle(current);
     }
+
+    public void AnimEvent_Sfx()
+    {    
+        // 캐스팅 중이 아닐 때 호출되면 무시
+        if (state != State.Casting) return;
+
+        // current가 없으면 무시
+        if (current == null) return;
+
+        // AudioManager가 없으면 무시(혹은 로그)
+        if (AudioManager3D.I == null) return;
+        AudioManager3D.I.PlaySkillSfx(current, transform.position);
+    }
+    
 
     // =========================================================
     // Reset / Movement
@@ -773,5 +820,17 @@ public class SkillRunner : MonoBehaviour
         }
 
         return Mathf.Max(0.1f, duration + startLifetime);
+    }
+    
+    public float GetCooldownRemaining(SkillSlot slot)
+    {
+        if (!cdEnd.TryGetValue(slot, out float end)) return 0f;
+        return Mathf.Max(0f, end - Time.time);
+    }
+
+    public float GetCooldownDuration(SkillSlot slot)
+    {
+        if (!map.TryGetValue(slot, out var def) || def == null) return 1f;
+        return Mathf.Max(0.01f, def.cooldown);
     }
 }

@@ -4,27 +4,41 @@ using TMPro;
 
 public class BattleUIManager : MonoBehaviour
 {
+    public GameObject Canvas;
     public GameObject BluePlayer;
     HealthEX BluePlayerHealth;
+    private UltGauge BlueUlt;
+    
     public GameObject RedPlayer;
     HealthEX RedPlayerHealth;
     public Image BlueHPGauge;
     public Image RedHPGauge;
-    public SkillDefinition[] SkillDefs; // 0~2: Skills, 3~4: Spells
-    public Image[] CDImgs; // 0~2: Skill CDs, 3~4: Spell CDs
+    public SkillDefinition[] SkillDefs; // 0~2: Skills
+    public Image[] CDImgs; // 0~2: Skill CDs
     public TextMeshProUGUI[] CDTexts;
     public Image UltMask;
     public Image UltGauge;
     public TextMeshProUGUI UltText;
+    public GameObject SpellDIcon;
+    public GameObject SpellFIcon;
+    public SkillRunner playerRunner;
+    public SummonerSpellRunner spellRunner;
     float[] coolDowns;
     bool[] isOnCD;
-
+    float elapsedTime = 0f;
+    bool isStarted = false;
 
     void Start()
     {
+//        SpellDIcon.GetComponent<Image>().sprite = SpellHolder.spellDImage.sprite;
+//        SpellFIcon.GetComponent<Image>().sprite = SpellHolder.spellFImage.sprite;
+
         BluePlayerHealth = BluePlayer.GetComponentInChildren<HealthEX>();
         RedPlayerHealth = RedPlayer.GetComponentInChildren<HealthEX>();
-
+        
+        BlueUlt = BluePlayer.GetComponentInParent<UltGauge>();
+        if (!BlueUlt) BlueUlt = BluePlayer.GetComponentInChildren<UltGauge>();
+        
         coolDowns = new float[CDImgs.Length];
         isOnCD = new bool[CDImgs.Length];
         UltGauge.fillAmount = 1f;
@@ -36,7 +50,8 @@ public class BattleUIManager : MonoBehaviour
             isOnCD[i] = false;
         }
     }
-
+    
+    /*
     public void StartCooldown(char skill)
     {
         switch (skill)
@@ -69,7 +84,7 @@ public class BattleUIManager : MonoBehaviour
                     isOnCD[2] = true;
                 }
                 break;
-            /*
+
             case 'D':
                 if (!isOnCD[3])
                 {
@@ -86,29 +101,98 @@ public class BattleUIManager : MonoBehaviour
                     isOnCD[4] = true;
                 }
                 break;
-            */
+
+        }
+    }
+*/
+    void UltGaugeUpdate()
+    {
+        if (BlueUlt != null)
+        {
+            float p = BlueUlt.GaugePercent; // 0~100
+            UltText.text = (p >= 100f) ? "" : Mathf.FloorToInt(p).ToString() + "%";
+
+            UltGauge.fillAmount = (100 - p)/ 100f;
+
+            if (UltGauge.fillAmount <= 0)
+            {
+                UltMask.enabled = false;
+                UltText.text = "";
+            }
+        }
+    }
+    
+    void UpdateCdUI(int idx, SkillSlot slot)
+    {
+        float remain = playerRunner.GetCooldownRemaining(slot);
+        float dur = playerRunner.GetCooldownDuration(slot);
+
+        if (remain > 0f)
+        {
+            CDImgs[idx].fillAmount = remain / dur; // 1 -> 0
+            CDTexts[idx].text = Mathf.CeilToInt(remain).ToString();
+        }
+        else
+        {
+            CDImgs[idx].fillAmount = 0f;
+            CDTexts[idx].text = "";
         }
     }
 
-    public void ChargeUlt(float amount)
+    void UpdateSpCdUI()
     {
-        if (UltGauge.fillAmount > 0)
-            UltGauge.fillAmount -= amount / 100f;
-        
-        if (UltGauge.fillAmount <= 0)
+        float dRemain = spellRunner.cdEnd[SummonerSlot.D] - Time.time;
+        float fRemain = spellRunner.cdEnd[SummonerSlot.F] - Time.time;
+        float dDur = spellRunner.spellD.cooldownSeconds;
+        float fDur = spellRunner.spellF.cooldownSeconds;
+
+        if (dRemain > 0f)
         {
-            UltMask.enabled = false;
-            UltText.text = "";
+            SpellDIcon.GetComponentInChildren<Image>().fillAmount = dRemain / dDur;
+            SpellDIcon.GetComponentInChildren<TextMeshProUGUI>().text = Mathf.CeilToInt(dRemain).ToString();
         }
-        else UltText.text = Mathf.FloorToInt((1-UltGauge.fillAmount) * 100f).ToString() + "%";
+        else
+        {
+            SpellDIcon.GetComponentInChildren<Image>().fillAmount = 0f;
+            SpellDIcon.GetComponentInChildren<TextMeshProUGUI>().text = "";
+        }
+
+        if (fRemain > 0f)
+        {
+            SpellFIcon.GetComponentInChildren<Image>().fillAmount = fRemain / fDur;
+            SpellFIcon.GetComponentInChildren<TextMeshProUGUI>().text = Mathf.CeilToInt(fRemain).ToString();
+        }
+        else
+        {
+            SpellFIcon.GetComponentInChildren<Image>().fillAmount = 0f;
+            SpellFIcon.GetComponentInChildren<TextMeshProUGUI>().text = "";
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (elapsedTime < 10f)
+        {
+            elapsedTime += Time.deltaTime;
+            return;
+        }
+
+        if (!isStarted)
+        {
+            isStarted = true;
+            Canvas.SetActive(true);
+        }
+        
+        UpdateCdUI(0, SkillSlot.Q);
+        UpdateCdUI(1, SkillSlot.W);
+        UpdateCdUI(2, SkillSlot.E);
+        
         BlueHPGauge.fillAmount = BluePlayerHealth.hp / 100f;
         RedHPGauge.fillAmount = RedPlayerHealth.hp / 100f;
-
+        
+        UltGaugeUpdate();
+        
         for (int i = 0; i < CDImgs.Length; i++)
         {
             if (isOnCD[i])

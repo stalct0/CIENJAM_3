@@ -32,6 +32,7 @@ public class AnimEventsForwarder : MonoBehaviour
     
     public void GuardStart()
     {
+        Debug.Log("[AE] GuardStart fired on " + gameObject.name);
         runner?.AnimEvent_GuardStart();
     }
     
@@ -39,5 +40,11 @@ public class AnimEventsForwarder : MonoBehaviour
     {
         runner?.AnimEvent_GuardEnd();
     }
+
+    public void StartSfx()
+    {
+        runner?.AnimEvent_Sfx();   
+    }
+    
     
 }

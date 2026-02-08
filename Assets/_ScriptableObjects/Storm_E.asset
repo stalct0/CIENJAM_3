@@ -13,7 +13,13 @@ MonoBehaviour:
   m_Name: Storm_E
   m_EditorClassIdentifier: 
   slot: 3
-  cooldown: 2
+  cooldown: 4
+  baseDamage: 0
+  guardBypass: 0
+  guardBypassFactor: 0.5
+  useChargeDamage: 0
+  minChargeDamage: 10
+  maxChargeDamage: 30
   animatorTrigger: Skill_E
   lockMovement: 1
   logic: {fileID: 11400000, guid: 4a0c4cab574974646a4a8bae323d38b2, type: 2}
@@ -21,4 +27,44 @@ MonoBehaviour:
   turnSpeedDegPerSec: 720
   facingToleranceDeg: 6
   lockMovementWhileTurning: 1
+  overrideWeaponPose: 0
+  weaponLocalPosOffset: {x: 0, y: 0, z: 0}
+  weaponLocalEulerOffset: {x: 0, y: 0, z: 0}
+  weaponPoseApplyTiming: 0
+  castMove: {fileID: 0}
+  isChargeSkill: 0
+  chargeStartTrigger: 
+  maxChargeTime: 3
+  autoReleaseOnMax: 1
+  chargeScale:
+    minVfxScale: 1
+    maxVfxScale: 2.5
+    minHitScale: 1
+    maxHitScale: 2
+    curve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 1
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 1
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    minDamageScale: 1
+    maxDamageScale: 1
   vfx: []

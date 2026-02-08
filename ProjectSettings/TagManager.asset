@@ -5,6 +5,9 @@ TagManager:
   serializedVersion: 3
   tags:
   - CinemachineTarget
+  - Interact
+  - Killzone
+  - Falldeath
   layers:
   - Default
   - TransparentFX

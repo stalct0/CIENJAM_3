@@ -13,10 +13,7 @@ public class WGuardAndAttackLogic : SkillLogic
     [Header("Optional LOS")]
     public bool checkLineOfSight = false;
     public LayerMask obstacleMask;
-
-    [Header("Damage")]
-    public int damage = 10; // W 후공격 데미지. (원하면 def.baseDamage 쓰도록 바꿀 수 있음)
-
+    
     private const int MAX_HITS = 32;
     private readonly Collider[] _buffer = new Collider[MAX_HITS];
     private readonly HashSet<int> _unique = new HashSet<int>();
@@ -28,6 +25,7 @@ public class WGuardAndAttackLogic : SkillLogic
     public override void OnCustomEvent(SkillRunner runner, SkillDefinition def, string evt)
     {
         // 가드 시작
+        Debug.Log("[W] OnCustomEvent " + evt + " on " + runner.name);
         var defense = runner.GetComponent<DefenseController>();
         if (!defense) return;
         
@@ -112,7 +110,7 @@ public class WGuardAndAttackLogic : SkillLogic
             if (attackerId == null) attackerId = runner.GetComponentInChildren<CombatIdentity>();
 
             // 데미지: W는 차지 스킬이 아니니 보통 고정
-            int finalDamage = (def != null ? def.baseDamage : damage);
+            int finalDamage = def.baseDamage;
 
             var info = new DamageInfo
             {
