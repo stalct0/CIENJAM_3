@@ -143,30 +143,43 @@ public class SummonerSpellRunner : MonoBehaviour
 
     private Transform FindExhaustTarget()
     {
-        Collider[] cols = Physics.OverlapSphere(transform.position, exhaustRange, exhaustTargetMask, QueryTriggerInteraction.Ignore);
+        Collider[] cols = Physics.OverlapSphere(
+            transform.position,
+            exhaustRange,
+            exhaustTargetMask,
+            QueryTriggerInteraction.Ignore
+        );
+
         if (cols == null || cols.Length == 0) return null;
 
         Transform best = null;
         float bestDist = float.MaxValue;
 
+        // ✅ 루트 중복(여러 콜라이더) 방지
+        HashSet<Transform> seenRoots = new HashSet<Transform>();
+
         for (int i = 0; i < cols.Length; i++)
         {
             var c = cols[i];
             if (!c) continue;
-            if (c.transform.root == transform.root) continue;
 
-            var dmg = c.GetComponentInParent<IDamageable>();
+            var root = c.transform.root;
+            if (!root || root == transform.root) continue;
+            if (!seenRoots.Add(root)) continue;
+
+            // ✅ "적" 판정: IDamageable이 root쪽에 있으면 OK (구조에 맞게 InParent/Children 선택)
+            var dmg = root.GetComponentInChildren<IDamageable>();
             if (dmg == null) continue;
 
-            float d = Vector3.Distance(transform.position, c.transform.position);
+            float d = Vector3.Distance(transform.position, root.position);
             if (d < bestDist)
             {
                 bestDist = d;
-                best = c.transform;
+                best = root;
             }
         }
 
-        return best ? best.root : null;
+        return best;
     }
 
     // =========================
