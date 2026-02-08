@@ -40,5 +40,11 @@ public class AnimEventsForwarder : MonoBehaviour
     {
         runner?.AnimEvent_GuardEnd();
     }
+
+    public void StartSfx()
+    {
+        runner?.AnimEvent_Sfx();   
+    }
+    
     
 }
