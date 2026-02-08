@@ -8,6 +8,7 @@ TagManager:
   - Interact
   - Killzone
   - Falldeath
+  - TowerCenter
   layers:
   - Default
   - TransparentFX
