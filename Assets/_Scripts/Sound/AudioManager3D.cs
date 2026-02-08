@@ -11,6 +11,9 @@ public class AudioManager3D : MonoBehaviour
     [Header("Pooling")]
     [SerializeField] private int initialPoolSize = 16;
 
+    [Header("BGM")]
+    [SerializeField] private AudioSource bgmSource;
+    
     private readonly Queue<AudioSource> pool = new();
     private readonly Dictionary<(SfxId, Transform), AudioSource> followLoops = new();
 
@@ -18,7 +21,15 @@ public class AudioManager3D : MonoBehaviour
     {
         if (I != null) { Destroy(gameObject); return; }
         I = this;
-
+        if (!bgmSource)
+        {
+            var go = new GameObject("[BGM]");
+            go.transform.SetParent(transform);
+            bgmSource = go.AddComponent<AudioSource>();
+            bgmSource.playOnAwake = false;
+            bgmSource.loop = true;
+            bgmSource.spatialBlend = 0f; // 항상 2D
+        }
         WarmPool();
     }
 
@@ -180,5 +191,23 @@ public class AudioManager3D : MonoBehaviour
         src.Play();
 
         StartCoroutine(ReturnWhenDone(src, def.sfxClip.length / Mathf.Max(0.01f, src.pitch)));
+    }
+    public void PlayBgm(AudioClip clip, float volume = 1f, bool restart = false)
+    {
+        if (!clip) return;
+
+        if (bgmSource.clip == clip && bgmSource.isPlaying && !restart)
+            return;
+
+        bgmSource.clip = clip;
+        bgmSource.volume = volume;
+        bgmSource.loop = true;
+        bgmSource.Play();
+    }
+
+    public void StopBgm()
+    {
+        if (bgmSource.isPlaying)
+            bgmSource.Stop();
     }
 }
