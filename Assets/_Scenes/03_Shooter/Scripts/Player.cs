@@ -8,18 +8,17 @@ public sealed class Player : NetworkBehaviour
     public PlayerInputHandler InputHandler;
     public GameManager GameManager;
 
+    // 1. 체력 및 상태 네트워크 변수
+    [Networked] public float NetworkedHP { get; set; }
+    [Networked] public float NetworkedMaxHP { get; set; } = 100f;
+
     public struct PlayerNetworkInputState : INetworkStruct
     {
-        public int CastLMBCount;
-        public int CastQCount;
-        public int CastWCount;
-        public int CastECount;
-        public int CastRDownCount;
-        public int CastRUpCount;
-        public int MoveClickCount;
-        public int HasAimPointCount;
-        public Vector3 MoveWorldPoint;
-        public Vector3 AimWorldPoint;
+        public int CastLMBCount, CastQCount, CastWCount, CastECount;
+        public int CastRDownCount, CastRUpCount;
+        public int CastDCount, CastFCount; // D, F 스킬 추가
+        public int MoveClickCount, HasAimPointCount;
+        public Vector3 MoveWorldPoint, AimWorldPoint;
     }
 
     [Networked] public PlayerNetworkInputState NetworkedInput { get; set; }
@@ -27,20 +26,27 @@ public sealed class Player : NetworkBehaviour
     private ChangeDetector _changeDetector;
     private bool _isInitialized;
     private bool _identitySetupDone;
+    private HealthEX _healthComponent; // 로컬 체력 컴포넌트
 
-    private int _lastLMBCount, _lastQCount, _lastWCount, _lastECount, _lastRDownCount, _lastRUpCount, _lastMoveClickCount, _lastHasAimPointCount;
+    // 프록시 카운트 비교용 로컬 변수
+    private int _lCount, _qCount, _wCount, _eCount, _rdCount, _ruCount, _dCount, _fCount, _mCount, _hCount;
 
     public override void Spawned()
     {
         if (InputHandler != null) InputHandler.enabled = false;
+        _healthComponent = GetComponentInChildren<HealthEX>();
+        
         _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
         SyncCountsToCurrent();
         
         GameManager = FindObjectOfType<GameManager>();
+        
+        // 초기 체력 설정 (권한자)
+        if (HasStateAuthority) NetworkedHP = NetworkedMaxHP;
+
         _isInitialized = true;
     }
 
-    // GameManager에서 스폰 직후 호출
     public void Init()
     {
         if (!HasStateAuthority) return;
@@ -51,13 +57,18 @@ public sealed class Player : NetworkBehaviour
     {
         if (!_isInitialized) return;
 
-        // 1. 권한자는 실제 입력을 읽음
         if (HasStateAuthority)
         {
             if (Mouse.current != null && Keyboard.current != null)
             {
                 InputHandler.UpdateAimPoint();
                 InputHandler.ReadInputsIntoState();
+            }
+
+            // 2. [권한자] 로컬 체력 값을 네트워크 변수로 브릿지
+            if (_healthComponent != null)
+            {
+                NetworkedHP = _healthComponent.hp;
             }
         }
     }
@@ -66,25 +77,97 @@ public sealed class Player : NetworkBehaviour
     {
         if (!_isInitialized) return;
 
-        // 2. [Proxy 전용] 내 화면에 보이는 상대방 캐릭터의 팀 설정 (한 번만)
+        // 3. 팀 및 UI 설정 (모든 클라이언트)
         if (!HasStateAuthority && !_identitySetupDone && Runner.SessionInfo.PlayerCount >= 2)
         {
             SetupIdentityAndUI();
         }
 
-        // 3. [Proxy 전용] 입력 동기화
-        if (!HasStateAuthority)
+        // 4. 네트워크 변화 감지
+        foreach (var change in _changeDetector.DetectChanges(this))
         {
-            foreach (var change in _changeDetector.DetectChanges(this))
+            if (change == nameof(NetworkedInput))
             {
-                if (change == nameof(NetworkedInput))
+                if (!HasStateAuthority)
                 {
                     SyncNetworkInputToProxyHandler();
                     InputHandler.DispatchStateToControllers();
                     InputHandler.ClearOneFrameTriggers();
                 }
             }
+            
+            // 5. [프록시] 체력 변화 동기화
+            if (change == nameof(NetworkedHP))
+            {
+                if (!HasStateAuthority && _healthComponent != null)
+                {
+                    _healthComponent.hp = (int)NetworkedHP;
+                }
+            }
         }
+    }
+
+    public override void FixedUpdateNetwork()
+    {
+        if (!_isInitialized || !HasStateAuthority) return;
+
+        var state = NetworkedInput;
+        // 입력 수집 (D, F 포함)
+        var s = InputHandler.inputState;
+        if (s.castLMB) state.CastLMBCount++;
+        if (s.castQ) state.CastQCount++;
+        if (s.castW) state.CastWCount++;
+        if (s.castE) state.CastECount++;
+        if (s.castRDown) state.CastRDownCount++;
+        if (s.castRUp) state.CastRUpCount++;
+        if (s.castD) state.CastDCount++;
+        if (s.castF) state.CastFCount++;
+        if (s.moveClick) state.MoveClickCount++;
+        if (s.hasAimPoint) state.HasAimPointCount++;
+        
+        state.MoveWorldPoint = s.moveWorldPoint;
+        state.AimWorldPoint = s.aimWorldPoint;
+        
+        NetworkedInput = state;
+
+        // 권한자 로직 실행
+        InputHandler.DispatchStateToControllers();
+        InputHandler.ClearOneFrameTriggers();
+    }
+
+    private void SyncCountsToCurrent()
+    {
+        var current = NetworkedInput;
+        _lCount = current.CastLMBCount; _qCount = current.CastQCount;
+        _wCount = current.CastWCount; _eCount = current.CastECount;
+        _rdCount = current.CastRDownCount; _ruCount = current.CastRUpCount;
+        _dCount = current.CastDCount; _fCount = current.CastFCount;
+        _mCount = current.MoveClickCount; _hCount = current.HasAimPointCount;
+    }
+
+    private void SyncNetworkInputToProxyHandler()
+    {
+        var c = NetworkedInput;
+        var s = InputHandler.inputState;
+
+        s.castLMB = (c.CastLMBCount != _lCount);
+        s.castQ = (c.CastQCount != _qCount);
+        s.castW = (c.CastWCount != _wCount);
+        s.castE = (c.CastECount != _eCount);
+        s.castRDown = (c.CastRDownCount != _rdCount);
+        s.castRUp = (c.CastRUpCount != _ruCount);
+        s.castD = (c.CastDCount != _dCount);
+        s.castF = (c.CastFCount != _fCount);
+        s.moveClick = (c.MoveClickCount != _mCount);
+        s.hasAimPoint = (c.HasAimPointCount != _hCount);
+        s.moveWorldPoint = c.MoveWorldPoint;
+        s.aimWorldPoint = c.AimWorldPoint;
+
+        InputHandler.inputState = s;
+
+        _lCount = c.CastLMBCount; _qCount = c.CastQCount; _wCount = c.CastWCount; _eCount = c.CastECount;
+        _rdCount = c.CastRDownCount; _ruCount = c.CastRUpCount; _dCount = c.CastDCount; _fCount = c.CastFCount;
+        _mCount = c.MoveClickCount; _hCount = c.HasAimPointCount;
     }
 
     private void SetupIdentityAndUI()
@@ -93,97 +176,29 @@ public sealed class Player : NetworkBehaviour
         var identity = InputHandler.GetComponent<CombatIdentity>();
         if (identity == null) return;
 
-        // 내가 조종하는 로컬 캐릭터인 경우
         if (HasStateAuthority)
         {
-            if (GameManager.player == 0) // 레드팀
-            {
+            if (GameManager.player == 0) {
                 identity.SetIdentity(0, TeamId.A, 0);
                 GameManager.BattleUIManager.RedPlayer = InputHandler.gameObject;
-            }
-            else // 블루팀
-            {
+            } else {
                 identity.SetIdentity(1, TeamId.B, 1);
                 GameManager.BattleUIManager.BluePlayer = InputHandler.gameObject;
             }
-
-            // 내 UI에 정보 연결
+            // 스킬 및 소환사 주문 쿨다운(시간) 동기화를 위해 Runner 연결
             GameManager.BattleUIManager.playerRunner = InputHandler.skillRunner;
             GameManager.BattleUIManager.spellRunner = InputHandler.summoner;
         }
-        // 내 화면에 보이는 상대방(Proxy) 캐릭터인 경우
         else
         {
-            // 내가 레드팀(0)이면 상대는 블루팀(1), 내가 블루팀(1)이면 상대는 레드팀(0)
-            if (GameManager.player == 0)
-            {
+            if (GameManager.player == 0) {
                 identity.SetIdentity(1, TeamId.B, 1);
                 GameManager.BattleUIManager.BluePlayer = InputHandler.gameObject;
-            }
-            else
-            {
+            } else {
                 identity.SetIdentity(0, TeamId.A, 0);
                 GameManager.BattleUIManager.RedPlayer = InputHandler.gameObject;
             }
         }
-
         _identitySetupDone = true;
-        Debug.Log($"[Identity Setup] {gameObject.name} as {(HasStateAuthority ? "Local" : "Proxy")}");
-    }
-
-    // ... (FixedUpdateNetwork, SyncCountsToCurrent, SyncNetworkInputToProxyHandler는 기존과 동일)
-    public override void FixedUpdateNetwork()
-    {
-        if (!_isInitialized || !HasStateAuthority) return;
-        var state = NetworkedInput;
-        if (InputHandler.inputState.castLMB) state.CastLMBCount++;
-        if (InputHandler.inputState.castQ) state.CastQCount++;
-        if (InputHandler.inputState.castW) state.CastWCount++;
-        if (InputHandler.inputState.castE) state.CastECount++;
-        if (InputHandler.inputState.castRDown) state.CastRDownCount++;
-        if (InputHandler.inputState.castRUp) state.CastRUpCount++;
-        if (InputHandler.inputState.moveClick) state.MoveClickCount++;
-        if (InputHandler.inputState.hasAimPoint) state.HasAimPointCount++;
-        state.MoveWorldPoint = InputHandler.inputState.moveWorldPoint;
-        state.AimWorldPoint = InputHandler.inputState.aimWorldPoint;
-        NetworkedInput = state;
-        InputHandler.DispatchStateToControllers();
-        InputHandler.ClearOneFrameTriggers();
-    }
-
-    private void SyncCountsToCurrent()
-    {
-        var current = NetworkedInput;
-        _lastLMBCount = current.CastLMBCount;
-        _lastQCount = current.CastQCount;
-        _lastWCount = current.CastWCount;
-        _lastECount = current.CastECount;
-        _lastRDownCount = current.CastRDownCount;
-        _lastRUpCount = current.CastRUpCount;
-        _lastMoveClickCount = current.MoveClickCount;
-        _lastHasAimPointCount = current.HasAimPointCount;
-    }
-
-    private void SyncNetworkInputToProxyHandler()
-    {
-        var current = NetworkedInput;
-        InputHandler.inputState.castLMB = (current.CastLMBCount != _lastLMBCount);
-        InputHandler.inputState.castQ = (current.CastQCount != _lastQCount);
-        InputHandler.inputState.castW = (current.CastWCount != _lastWCount);
-        InputHandler.inputState.castE = (current.CastECount != _lastECount);
-        InputHandler.inputState.castRDown = (current.CastRDownCount != _lastRDownCount);
-        InputHandler.inputState.castRUp = (current.CastRUpCount != _lastRUpCount);
-        InputHandler.inputState.moveClick = (current.MoveClickCount != _lastMoveClickCount);
-        InputHandler.inputState.hasAimPoint = (current.HasAimPointCount != _lastHasAimPointCount);
-        InputHandler.inputState.moveWorldPoint = current.MoveWorldPoint;
-        InputHandler.inputState.aimWorldPoint = current.AimWorldPoint;
-        _lastLMBCount = current.CastLMBCount;
-        _lastQCount = current.CastQCount;
-        _lastWCount = current.CastWCount;
-        _lastECount = current.CastECount;
-        _lastRDownCount = current.CastRDownCount;
-        _lastRUpCount = current.CastRUpCount;
-        _lastMoveClickCount = current.MoveClickCount;
-        _lastHasAimPointCount = current.HasAimPointCount;
     }
 }
