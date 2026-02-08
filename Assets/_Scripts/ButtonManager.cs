@@ -4,6 +4,7 @@ using UnityEngine.UI;
 public class ButtonManager : MonoBehaviour
 {
     public GameObject OptionsMenu;
+    public GameObject HtP;
     public GameObject DSpellMenu;
     public GameObject FSpellMenu;
     public GameObject SpellDButton;
@@ -38,6 +39,16 @@ public class ButtonManager : MonoBehaviour
     public void CloseOptions()
     {
         OptionsMenu.SetActive(false);
+    }
+
+    public void OpenHtP()
+    {
+        HtP.SetActive(true);
+    }
+
+    public void CloseHtP()
+    {
+        HtP.SetActive(false);
     }
 
     public void OpenDSpellMenu()
