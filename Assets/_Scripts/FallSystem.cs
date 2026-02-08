@@ -31,7 +31,16 @@ public class FallSystem : MonoBehaviour
         if (!knockback) knockback = GetComponent<KnockbackController>();
         if (!health) health = GetComponentInChildren<HealthEX>();
         if (!rb) rb = GetComponent<Rigidbody>();
-
+        
+        if (!towerCenter)
+        {
+            GameObject tc = GameObject.FindGameObjectWithTag("TowerCenter");
+            if (tc)
+                towerCenter = tc.transform;
+            else
+                Debug.LogWarning("[FallSystem] TowerCenter 태그 오브젝트를 찾지 못했습니다.");
+        }
+        
         // 평상시: NavMesh 이동, Rigidbody는 비활성(키네마틱)
         if (rb)
         {
