@@ -33,6 +33,9 @@ public class SummonerSpellRunner : MonoBehaviour
         if (!cam) cam = Camera.main;
         if (!knockback) knockback = GetComponent<KnockbackController>();
 
+        spellD.type = SpellHolder.spellD;
+        spellF.type = SpellHolder.spellF;
+
         cdEnd[SummonerSlot.D] = 0f;
         cdEnd[SummonerSlot.F] = 0f;
     }
