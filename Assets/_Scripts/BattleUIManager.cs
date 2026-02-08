@@ -4,6 +4,7 @@ using TMPro;
 
 public class BattleUIManager : MonoBehaviour
 {
+    public GameObject Canvas;
     public GameObject BluePlayer;
     HealthEX BluePlayerHealth;
     private UltGauge BlueUlt;
@@ -24,6 +25,8 @@ public class BattleUIManager : MonoBehaviour
     public SummonerSpellRunner spellRunner;
     float[] coolDowns;
     bool[] isOnCD;
+    float elapsedTime = 0f;
+    bool isStarted = false;
 
     void Start()
     {
@@ -169,6 +172,17 @@ public class BattleUIManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (elapsedTime < 10f)
+        {
+            elapsedTime += Time.deltaTime;
+            return;
+        }
+
+        if (!isStarted)
+        {
+            isStarted = true;
+            Canvas.SetActive(true);
+        }
         
         UpdateCdUI(0, SkillSlot.Q);
         UpdateCdUI(1, SkillSlot.W);

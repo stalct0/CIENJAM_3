@@ -8,13 +8,16 @@ public class Crystal : MonoBehaviour
     [SerializeField] GameObject Timer; 
     [SerializeField] GameObject BlueCrystal;
     [SerializeField] GameObject RedCrystal;
+
+    GameObject blue;
+    GameObject red;
     
     BattleTimer battleTimer;
     float crystalTimer;
     bool isFirst = true;
     bool isSpawned = false;
     bool isOneDestroyed = false;
-    float timeLimit = 0;
+    float timeLimit = 0f;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -51,11 +54,23 @@ public class Crystal : MonoBehaviour
 
         if (isSpawned)
         {
+            bool blueDead = blue == null;
+            bool redDead = red == null;
+            if (blueDead && redDead) 
+            {
+                SpawnEnd();
+                return;
+            }
+            
+            isOneDestroyed = (blueDead || redDead) && !(blueDead && redDead);
+            
             if (isOneDestroyed)
             {
                 timeLimit += Time.deltaTime;
                 if (timeLimit >= 2f)
-                    SpawnEnd(); 
+                {
+                    SpawnEnd();
+                }
             }
         }
     }
@@ -64,30 +79,21 @@ public class Crystal : MonoBehaviour
     {
         if (!isSpawned)
         {
-            GameObject blue = Instantiate(BlueCrystal, new Vector3(-randomX, 0.5f, randomZ) + fieldTransform.position, Quaternion.identity);
+            blue = Instantiate(BlueCrystal, new Vector3(-randomX, 0.8f, randomZ) + fieldTransform.position, Quaternion.identity);
             SetupCrystal(blue, TeamId.A);
 
-            GameObject red = Instantiate(RedCrystal, new Vector3(randomX, 0.5f, randomZ) + fieldTransform.position, Quaternion.identity);
+            red = Instantiate(RedCrystal, new Vector3(randomX, 0.8f, randomZ) + fieldTransform.position, Quaternion.identity);
             SetupCrystal(red, TeamId.B);
 
             isSpawned = true;
-            
+            timeLimit = 0f;
         }
     }
 
     void SpawnEnd()
     {
-        try
-        {
-            Destroy(BlueCrystal);
-        }
-        catch { }
-
-        try
-        {
-            Destroy(RedCrystal);
-        }
-        catch { }
+        if (blue != null) Destroy(blue);
+        if (red != null) Destroy(red);
         isOneDestroyed = false;
         crystalTimer = 0f;
         timeLimit = 0f;
